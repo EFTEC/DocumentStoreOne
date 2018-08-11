@@ -27,3 +27,7 @@ $flatcon->delete("1");
 ## Limits
 - Keys should be of the type A-a,0-9
 - The limit of document that a schema could hold is based on the file system used.
+
+## Version list
+
+- 1.0 2018-08-11 first version
