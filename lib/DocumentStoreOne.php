@@ -58,17 +58,63 @@ class DocumentStoreOne {
     }
 
     /**
-     * Add or update a field.
+     * Add a document.
      * @param string $id Id of the document.
      * @param string $document The document
      * @param int $tries
      * @return bool True if the information was added, otherwise false
      */
-    public function add($id,$document,$tries=-1)
+    public function insert($id,$document,$tries=-1)
     {
         $file =$this->filename($id);
         if ($this->lockFolder($file,$tries)) {
-            $write=file_put_contents($file, $document, LOCK_EX);
+            if (!file_exists($file)) {
+                $write = @file_put_contents($file, $document, LOCK_EX);
+            } else {
+                $write=false;
+            }
+            $this->unlockFolder($file);
+            return ($write!==false);
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Update a document
+     * @param string $id Id of the document.
+     * @param string $document The document
+     * @param int $tries
+     * @return bool True if the information was added, otherwise false
+     */
+    public function update($id,$document,$tries=-1)
+    {
+        $file =$this->filename($id);
+        if ($this->lockFolder($file,$tries)) {
+            if (file_exists($file)) {
+                $write = @file_put_contents($file, $document, LOCK_EX);
+            } else {
+                $write=false;
+            }
+            $this->unlockFolder($file);
+            return ($write!==false);
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Add or update a document.
+     * @param string $id Id of the document.
+     * @param string $document The document
+     * @param int $tries
+     * @return bool True if the information was added, otherwise false
+     */
+    public function insertOrUpdate($id,$document,$tries=-1)
+    {
+        $file =$this->filename($id);
+        if ($this->lockFolder($file,$tries)) {
+            $write = @file_put_contents($file, $document, LOCK_EX);
             $this->unlockFolder($file);
             return ($write!==false);
         } else {
@@ -103,7 +149,7 @@ class DocumentStoreOne {
      * List all the Ids in a schema.
      * @return array|false
      */
-    public function list() {
+    public function select() {
         $list = glob($this->database."/".$this->schema."/*.json");
         foreach ($list as &$file) {
             $file=basename($file,'.json');
@@ -112,12 +158,12 @@ class DocumentStoreOne {
     }
 
     /**
-     * Read document
+     * Get a document
      * @param string $id Id of the document.
      * @param int $tries
      * @return string|bool True if the information was read, otherwise false.
      */
-    public function read($id,$tries=-1) {
+    public function get($id,$tries=-1) {
         $file =$this->filename($id);
         if ($this->lockFolder($file,$tries)) {
             $json=@file_get_contents($file);

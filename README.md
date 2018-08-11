@@ -13,14 +13,15 @@ A flat document store for PHP that allows multiples concurrencies. It is a minim
 ```php
 <?php
 include "lib/DocumentStoreOne.php";
+use eftec\DocumentStoreOne\DocumentStoreOne;
 try {
     $flatcon = new DocumentStoreOne(dirname(__FILE__) . "/base", 'tmp');
 } catch (Exception $e) {
     die("Unable to create document store. Please, check the folder");
 }
-$flatcon->add("1",json_encode(array("a1"=>'hello',"a2"=>'world')));
-$doc=$flatcon->read("1");
-$listKeys=$flatcon->list();
+$flatcon->insertOrUpdate("1",json_encode(array("a1"=>'hello',"a2"=>'world')));
+$doc=$flatcon->get("1");
+$listKeys=$flatcon->select();
 $flatcon->delete("1");
 ```
 
@@ -33,38 +34,63 @@ It creates the DocumentStoreOne instance.   The $baseFolder should be a folder, 
 ```php
 include "lib/DocumentStoreOne.php";
 try {
-    $flatcon = new DocumentStoreOne(dirname(__FILE__) . "/base", 'tmp');
+    $flatcon = new \eftec\DocumentStoreOne\DocumentStoreOne(dirname(__FILE__) . "/base", 'tmp');
 } catch (Exception $e) {
     die("Unable to create document store. Please, check the folder");
 }
 ```
 
-### add($id,$document,[$tries=-1])
+### insertOrUpdate($id,$document,[$tries=-1])
 
-Adds a new document (string) in the $id indicated. If the $id exists, then it's updated.
+inserts a new document (string) in the $id indicated. If the document exists then it's updated.
 **$tries** indicates the number of tries. The default value is -1 (default number of attempts).
 
 ```php
 $doc=json_encode(array("a1"=>'hello',"a2"=>'world')
-$flatcon->add("1",$doc));
+$flatcon->insertOrUpdate("1",$doc));
+```
+> If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 300 that it's around 30 seconds)
+> It's fast than insert or update.
+
+### insert($id,$document,[$tries=-1])
+
+Inserts a new document (string) in the $id indicated. If the document exists then it returns false.
+**$tries** indicates the number of tries. The default value is -1 (default number of attempts).
+
+```php
+$doc=json_encode(array("a1"=>'hello',"a2"=>'world')
+$flatcon->insert("1",$doc));
 ```
 
 > If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 300 that it's around 30 seconds)
 
-### read($id,[$tries=-1])
+### update($id,$document,[$tries=-1])
 
-It reads a document with the $id.  If the document doesn't exist or it's unable to read it, then it returns false.
+Update a document (string) in the $id indicated. If the document doesn't exist then it returns false
 **$tries** indicates the number of tries. The default value is -1 (default number of attempts).
 
 ```php
-$doc=$flatcon->read("1");
+$doc=json_encode(array("a1"=>'hello',"a2"=>'world')
+$flatcon->update("1",$doc));
+```
+
+> If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 300 that it's around 30 seconds)
+
+
+### get($id,[$tries=-1])
+
+It reads the document $id.  If the document doesn't exist or it's unable to read it, then it returns false.
+**$tries** indicates the number of tries. The default value is -1 (default number of attempts).
+
+```php
+$doc=$flatcon->get("1");
 ```
 
 > If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 300 that it's around 30 seconds)
 
 ### ifExist($id,[$tries=-1])
 
-It checks if the document with $id exists.  It returns true if the document exists. Otherwise, it returns false.
+It checks if the document $id exists.  It returns true if the document exists. Otherwise, it returns false.
 **$tries** indicates the number of tries. The default value is -1 (default number of tries).
 >The validation only happens if the document is fully unlocked.
 
@@ -76,15 +102,25 @@ $found=$flatcon->ifExist("1");
 
 ### delete($id,[$tries=-1])
 
-It deletes a document with the $id.  If the document doesn't exist or it's unable to delete then it returns false.
+It deletes the document $id.  If the document doesn't exist or it's unable to delete then it returns false.
 **$tries** indicates the number of tries. The default value is -1 (default number of tries).
 
 ```php
 $doc=$flatcon->delete("1");
 ```
 
-
 > If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 300 that it's around 30 seconds)
+
+### list()
+
+It returns all the IDs stored on a schema.
+
+```php
+$listKeys=$flatcon->select();
+```
+
+> It includes locked documents.
+
 
 ## Limits
 - Keys should be of the type A-a,0-9
