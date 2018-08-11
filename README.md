@@ -50,6 +50,7 @@ $doc=json_encode(array("a1"=>'hello',"a2"=>'world')
 $flatcon->insertOrUpdate("1",$doc));
 ```
 > If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 300 that it's around 30 seconds)
+
 > It's fast than insert or update.
 
 ### insert($id,$document,[$tries=-1])
