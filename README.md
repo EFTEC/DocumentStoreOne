@@ -3,8 +3,8 @@ A flat document store for PHP that allows multiples concurrencies. It is a minim
 
 ## Key features
 - Single key based.
-- Fast. However, it's not an alternative to a relational database. It's optimized for store a moderated number documents instead of millions of rows.
-- Allows multiple concurrences by locking and unlocking a document. If the document is locked then, it retries until the document is unlocked or fails after a number of retries.
+- Fast. However, it's not an alternative to a relational database. It's optimized to store a moderated number documents instead of millions of rows.
+- **Allows multiple concurrences by locking and unlocking a document**. If the document is locked then, it retries until the document is unlocked or fails after a number of retries.
 - One single class with no dependencies.
 - Automatic unlock document locked (by default, every 2 minutes if the file was left locked).
 
@@ -28,32 +28,67 @@ $flatcon->delete("1");
 
 ### Constructor($baseFolder,$schema)
 
-It creates the DocumentStoreOne instance.   The $baseFolder should be a folder and $schema (a subfolder) is optional.
+It creates the DocumentStoreOne instance.   The $baseFolder should be a folder, and $schema (a subfolder) is optional.
+
+```php
+include "lib/DocumentStoreOne.php";
+try {
+    $flatcon = new DocumentStoreOne(dirname(__FILE__) . "/base", 'tmp');
+} catch (Exception $e) {
+    die("Unable to create document store. Please, check the folder");
+}
+```
 
 ### add($id,$document,[$tries=-1])
 
-Adds a new document (string) in the $id indicated. If the $id exists then it's updated.
-**$tries** indicates the number of tries. The default value is -1 (default number of tries).
+Adds a new document (string) in the $id indicated. If the $id exists, then it's updated.
+**$tries** indicates the number of tries. The default value is -1 (default number of attempts).
 
-> If the file is locked then it tries until it is available or after a "nth" number of tries (by default its 20)
+```php
+$doc=json_encode(array("a1"=>'hello',"a2"=>'world')
+$flatcon->add("1",$doc));
+```
+
+> If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 300 that it's around 30 seconds)
 
 ### read($id,[$tries=-1])
 
-It reads a document with the $id.  If the file doesn't exists or it's unable to read it then it returns false.
-**$tries** indicates the number of tries. The default value is -1 (default number of tries).
+It reads a document with the $id.  If the document doesn't exist or it's unable to read it, then it returns false.
+**$tries** indicates the number of tries. The default value is -1 (default number of attempts).
 
-> If the file is locked then it tries until it is available or after a "nth" number of tries (by default its 20)
+```php
+$doc=$flatcon->read("1");
+```
+
+> If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 300 that it's around 30 seconds)
+
+### ifExist($id,[$tries=-1])
+
+It checks if the document with $id exists.  It returns true if the document exists. Otherwise, it returns false.
+**$tries** indicates the number of tries. The default value is -1 (default number of tries).
+>The validation only happens if the document is fully unlocked.
+
+```php
+$found=$flatcon->ifExist("1");
+```
+
+> If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 300 that it's around 30 seconds)
 
 ### delete($id,[$tries=-1])
 
-It deletes a document with the $id.  If the file doesn't exists or it's unable to delete then it returns false.
+It deletes a document with the $id.  If the document doesn't exist or it's unable to delete then it returns false.
 **$tries** indicates the number of tries. The default value is -1 (default number of tries).
 
-> If the file is locked then it tries until it is available or after a "nth" number of tries (by default its 20)
+```php
+$doc=$flatcon->delete("1");
+```
+
+
+> If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 300 that it's around 30 seconds)
 
 ## Limits
 - Keys should be of the type A-a,0-9
-- The limit of document that a schema could hold is based on the file system used.
+- The limit of document that a schema could hold is based on the document system used. NTFS allows 2 millions of documents per schema.
 
 ## Version list
 

@@ -15,8 +15,10 @@ class DocumentStoreOne {
     var $schema;
     /** @var int Maximium duration of the lock (in seconds). By default it's 2 minutes */
     var $maxLockTime=120;
-    /** @var int Default number of retries */
-    var $defaultNumRetry=20;
+    /** @var int Default number of retries. By default it tries 300x0.1sec=30 seconds */
+    var $defaultNumRetry=300;
+    /** @var int Interval (in microseconds) between retries. 100000 means 0.1 seconds */
+    var $intervalBetweenRetry=100000;
 
     /**
      * DocumentStoreOne constructor.
@@ -127,6 +129,20 @@ class DocumentStoreOne {
     }
 
     /**
+     * Return if the document exists. It doesn't check until the document is fully unlocked.
+     * @param string $id Id of the document.
+     * @param int $tries
+     * @return string|bool True if the information was read, otherwise false.
+     */
+    public function ifExist($id,$tries=-1) {
+        $file =$this->filename($id);
+        if ($this->lockFolder($file,$tries)) {
+            return file_exists($file);
+        } else {
+            return false;
+        }
+    }
+    /**
      * Delete document.
      * @param string $id Id of the document
      * @param int $tries
@@ -163,7 +179,7 @@ class DocumentStoreOne {
                     $life = false;
                 }
             }
-            usleep(rand(100000,200000));// 0.1s to 0.2s
+            usleep($this->intervalBetweenRetry);
         }
         return ($try<$maxRetry);
     }
