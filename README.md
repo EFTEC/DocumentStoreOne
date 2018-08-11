@@ -109,7 +109,6 @@ It deletes the document $id.  If the document doesn't exist or it's unable to de
 ```php
 $doc=$flatcon->delete("1");
 ```
-
 > If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 300 that it's around 30 seconds)
 
 ### list()
@@ -119,9 +118,7 @@ It returns all the IDs stored on a schema.
 ```php
 $listKeys=$flatcon->select();
 ```
-
 > It includes locked documents.
-
 
 ## Limits
 - Keys should be of the type A-a,0-9
