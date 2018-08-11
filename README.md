@@ -9,7 +9,7 @@ A flat document store for PHP that allows multiples concurrencies. It is a minim
 
 ## Usage
 
-´´´php
+```php
 <?php
 include "xdev/DocumentStoreOne.php";
 echo "test<br>";
@@ -28,4 +28,4 @@ echo "<hr>";
 var_dump($flatcon->list());
 echo "<hr>";
 $flatcon->delete("1");
-´´´
+```
