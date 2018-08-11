@@ -1,4 +1,5 @@
 <?php
+namespace eftec\DocumentStoreOne;
 
 /**
  * Class DocumentStoreOne
@@ -12,20 +13,22 @@ class DocumentStoreOne {
     var $database;
     /** @var string schema (subfolder) of the database */
     var $schema;
+    /** @var int Maximium duration of the lock (in seconds). By default it's 2 minutes */
+    var $maxLockTime=120;
 
     /**
      * DocumentStoreOne constructor.
      * @example $flatcon=new DocumentStoreOne(dirname(__FILE__)."/base",'schemaFolder');
      * @param string $database root folder of the database
      * @param string $schema schema (subfolder) of the database. If the schema is empty then it uses the root folder.
-     * @throws Exception
+     * @throws \Exception
      */
     public function __construct($database, $schema='')
     {
         $this->database = $database;
         $this->schema = $schema;
         if (!is_dir($this->getPath())) {
-            throw new Exception("Incorrect folder");
+            throw new \Exception("Incorrect folder");
         }
     }
 
@@ -149,8 +152,8 @@ class DocumentStoreOne {
         while (!@mkdir($lockname) && $try<$maxRetry){
             $try++;
             if ($life) {
-                if ((time() - $life) > 120) {
-                    rmdir($lockname); //auto unlock every 2 minutes.
+                if ((time() - $life) > $this->maxLockTime) {
+                    rmdir($lockname);
                     $life = false;
                 }
             }

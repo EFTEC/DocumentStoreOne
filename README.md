@@ -2,6 +2,7 @@
 A flat document store for PHP that allows multiples concurrencies. It is a minimalist alternative to MongoDB without the overhead of installing a new service.
 
 ## Key features
+- Single key based.
 - Fast
 - Allows multiple concurrences by using locking and unlocking
 - One single class with no dependencies.
@@ -11,21 +12,18 @@ A flat document store for PHP that allows multiples concurrencies. It is a minim
 
 ```php
 <?php
-include "xdev/DocumentStoreOne.php";
-echo "test<br>";
+include "lib/DocumentStoreOne.php";
 try {
-    $flatcon = new DocumentStoreOne(dirname(__FILE__) . "/base", '');
+    $flatcon = new DocumentStoreOne(dirname(__FILE__) . "/base", 'tmp');
 } catch (Exception $e) {
-    die("Unable to create document store");
+    die("Unable to create document store. Please, check the folder");
 }
-
-var_dump($flatcon->setSchema('tmp'));
-echo "<hr>add<br>";
-var_dump($flatcon->add("1",json_encode(array("a1"=>'hello',"a2"=>'world'))));
-echo "<hr>get:<br>";
-var_dump($flatcon->read("1"));
-echo "<hr>";
-var_dump($flatcon->list());
-echo "<hr>";
+$flatcon->add("1",json_encode(array("a1"=>'hello',"a2"=>'world')));
+$doc=$flatcon->read("1");
+$listKeys=$flatcon->list();
 $flatcon->delete("1");
 ```
+
+## Limits
+- Keys should be of the type A-a,0-9
+- The limit of document that a schema could hold is based on the file system used.
