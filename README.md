@@ -3,8 +3,8 @@ A flat document store for PHP that allows multiples concurrencies. It is a minim
 
 ## Key features
 - Single key based.
-- Fast
-- Allows multiple concurrences by using locking and unlocking
+- Fast. However, it's not an alternative to a relational database. It's optimized for store a moderated number documents instead of millions of rows.
+- Allows multiple concurrences by locking and unlocking a document. If the document is locked then, it retries until the document is unlocked or fails after a number of retries.
 - One single class with no dependencies.
 - Automatic unlock document locked (by default, every 2 minutes if the file was left locked).
 
@@ -31,3 +31,7 @@ $flatcon->delete("1");
 ## Version list
 
 - 1.0 2018-08-11 first version
+
+## Pending
+
+- Transactional (allows to commit or rollback a multiple step transaction)
