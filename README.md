@@ -29,7 +29,7 @@ $flatcon->delete("1");
 
 ### Constructor($baseFolder,$schema)
 
-It creates the DocumentStoreOne instance.   The $baseFolder should be a folder, and $schema (a subfolder) is optional.
+It creates the DocumentStoreOne instance.   **$baseFolder** should be a folder, and **$schema** (a subfolder) is optional.
 
 ```php
 include "lib/DocumentStoreOne.php";
@@ -42,8 +42,8 @@ try {
 
 ### insertOrUpdate($id,$document,[$tries=-1])
 
-inserts a new document (string) in the $id indicated. If the document exists then it's updated.
-**$tries** indicates the number of tries. The default value is -1 (default number of attempts).
+inserts a new document (string) in the **$id** indicated. If the document exists then it's updated.  
+**$tries** indicates the number of tries. The default value is -1 (default number of attempts).  
 
 ```php
 $doc=json_encode(array("a1"=>'hello',"a2"=>'world')
@@ -55,8 +55,8 @@ $flatcon->insertOrUpdate("1",$doc));
 
 ### insert($id,$document,[$tries=-1])
 
-Inserts a new document (string) in the $id indicated. If the document exists then it returns false.
-**$tries** indicates the number of tries. The default value is -1 (default number of attempts).
+Inserts a new document (string) in the **$id** indicated. If the document exists then it returns false.  
+**$tries** indicates the number of tries. The default value is -1 (default number of attempts).  
 
 ```php
 $doc=json_encode(array("a1"=>'hello',"a2"=>'world')
@@ -67,8 +67,8 @@ $flatcon->insert("1",$doc));
 
 ### update($id,$document,[$tries=-1])
 
-Update a document (string) in the $id indicated. If the document doesn't exist then it returns false
-**$tries** indicates the number of tries. The default value is -1 (default number of attempts).
+Update a document (string) in the **$id** indicated. If the document doesn't exist then it returns false  
+**$tries** indicates the number of tries. The default value is -1 (default number of attempts).  
 
 ```php
 $doc=json_encode(array("a1"=>'hello',"a2"=>'world')
@@ -80,8 +80,8 @@ $flatcon->update("1",$doc));
 
 ### get($id,[$tries=-1])
 
-It reads the document $id.  If the document doesn't exist or it's unable to read it, then it returns false.
-**$tries** indicates the number of tries. The default value is -1 (default number of attempts).
+It reads the document **$id**.  If the document doesn't exist or it's unable to read it, then it returns false.  
+**$tries** indicates the number of tries. The default value is -1 (default number of attempts).  
 
 ```php
 $doc=$flatcon->get("1");
@@ -91,9 +91,9 @@ $doc=$flatcon->get("1");
 
 ### ifExist($id,[$tries=-1])
 
-It checks if the document $id exists.  It returns true if the document exists. Otherwise, it returns false.
-**$tries** indicates the number of tries. The default value is -1 (default number of tries).
->The validation only happens if the document is fully unlocked.
+It checks if the document **$id** exists.  It returns true if the document exists. Otherwise, it returns false.  
+**$tries** indicates the number of tries. The default value is -1 (default number of tries).  
+>The validation only happens if the document is fully unlocked.  
 
 ```php
 $found=$flatcon->ifExist("1");
@@ -103,8 +103,8 @@ $found=$flatcon->ifExist("1");
 
 ### delete($id,[$tries=-1])
 
-It deletes the document $id.  If the document doesn't exist or it's unable to delete then it returns false.
-**$tries** indicates the number of tries. The default value is -1 (default number of tries).
+It deletes the document **$id**.  If the document doesn't exist or it's unable to delete then it returns false.  
+**$tries** indicates the number of tries. The default value is -1 (default number of tries).  
 
 ```php
 $doc=$flatcon->delete("1");
@@ -113,7 +113,7 @@ $doc=$flatcon->delete("1");
 
 ### list()
 
-It returns all the IDs stored on a schema.
+It returns all the IDs stored on a schema.  
 
 ```php
 $listKeys=$flatcon->select();
@@ -121,8 +121,8 @@ $listKeys=$flatcon->select();
 > It includes locked documents.
 
 ## Limits
-- Keys should be of the type A-a,0-9
-- The limit of document that a schema could hold is based on the document system used. NTFS allows 2 millions of documents per schema.
+- Keys should be of the type A-a,0-9  
+- The limit of document that a schema could hold is based on the document system used. NTFS allows 2 millions of documents per schema.  
 
 ## Version list
 
