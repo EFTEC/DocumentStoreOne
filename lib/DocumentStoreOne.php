@@ -15,6 +15,8 @@ class DocumentStoreOne {
     var $schema;
     /** @var int Maximium duration of the lock (in seconds). By default it's 2 minutes */
     var $maxLockTime=120;
+    /** @var int Default number of retries */
+    var $defaultNumRetry=20;
 
     /**
      * DocumentStoreOne constructor.
@@ -56,14 +58,15 @@ class DocumentStoreOne {
     /**
      * Add or update a field.
      * @param string $id Id of the document.
-     * @param string $json The document
+     * @param string $document The document
+     * @param int $tries
      * @return bool True if the information was added, otherwise false
      */
-    public function add($id,$json)
+    public function add($id,$document,$tries=-1)
     {
         $file =$this->filename($id);
-        if ($this->lockFolder($file)) {
-            $write=file_put_contents($file, $json, LOCK_EX);
+        if ($this->lockFolder($file,$tries)) {
+            $write=file_put_contents($file, $document, LOCK_EX);
             $this->unlockFolder($file);
             return ($write!==false);
         } else {
@@ -108,12 +111,13 @@ class DocumentStoreOne {
 
     /**
      * Read document
-     * @param string $id  Id of the document.
+     * @param string $id Id of the document.
+     * @param int $tries
      * @return string|bool True if the information was read, otherwise false.
      */
-    public function read($id) {
+    public function read($id,$tries=-1) {
         $file =$this->filename($id);
-        if ($this->lockFolder($file)) {
+        if ($this->lockFolder($file,$tries)) {
             $json=@file_get_contents($file);
             $this->unlockFolder($file);
             return $json;
@@ -125,11 +129,12 @@ class DocumentStoreOne {
     /**
      * Delete document.
      * @param string $id Id of the document
+     * @param int $tries
      * @return bool
      */
-    public function delete($id) {
+    public function delete($id,$tries=-1) {
         $file =$this->filename($id);
-        if ($this->lockFolder($file)) {
+        if ($this->lockFolder($file,$tries)) {
             unlink($file);
             $this->unlockFolder($file);
             return true;
@@ -144,8 +149,9 @@ class DocumentStoreOne {
      * @param int $maxRetry
      * @return bool
      */
-    private function lockFolder($filepath,$maxRetry=20){
+    private function lockFolder($filepath,$maxRetry=-1){
         clearstatcache();
+        $maxRetry=($maxRetry==-1)?$this->defaultNumRetry:$maxRetry;
         $lockname=$filepath.".lock";
         $life=@filectime($lockname);
         $try=0;
@@ -157,7 +163,7 @@ class DocumentStoreOne {
                     $life = false;
                 }
             }
-            usleep(rand(100000,200000));// 100ms to 200ms (around 5-10 tries per second, or 10 to 20 seconds max.
+            usleep(rand(100000,200000));// 0.1s to 0.2s
         }
         return ($try<$maxRetry);
     }

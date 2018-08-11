@@ -24,6 +24,33 @@ $listKeys=$flatcon->list();
 $flatcon->delete("1");
 ```
 
+## Commands
+
+### Constructor($baseFolder,$schema)
+
+It creates the DocumentStoreOne instance.   The $baseFolder should be a folder and $schema (a subfolder) is optional.
+
+### add($id,$document,[$tries=-1])
+
+Adds a new document (string) in the $id indicated. If the $id exists then it's updated.
+**$tries** indicates the number of tries. The default value is -1 (default number of tries).
+
+> If the file is locked then it tries until it is available or after a "nth" number of tries (by default its 20)
+
+### read($id,[$tries=-1])
+
+It reads a document with the $id.  If the file doesn't exists or it's unable to read it then it returns false.
+**$tries** indicates the number of tries. The default value is -1 (default number of tries).
+
+> If the file is locked then it tries until it is available or after a "nth" number of tries (by default its 20)
+
+### delete($id,[$tries=-1])
+
+It deletes a document with the $id.  If the file doesn't exists or it's unable to delete then it returns false.
+**$tries** indicates the number of tries. The default value is -1 (default number of tries).
+
+> If the file is locked then it tries until it is available or after a "nth" number of tries (by default its 20)
+
 ## Limits
 - Keys should be of the type A-a,0-9
 - The limit of document that a schema could hold is based on the file system used.
