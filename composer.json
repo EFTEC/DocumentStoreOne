@@ -1,0 +1,19 @@
+{
+    "name": "eftec/documentstoreone",
+    "description": "A flat document store for PHP that allows multiples concurrencies.",
+    "type": "library",
+    "keywords": ["blade","template","view","php"],
+    "homepage": "https://github.com/EFTEC/DocumentStoreOne",
+    "license": "LGPLV3",
+    "authors": [
+        {
+            "name": "Jorge Castro Castillo",
+            "email": "jcastro@eftec.cl"
+        }],
+    "extra": {
+        "branch-alias": {
+          "dev-master": "1.0-dev"
+        }
+      },
+    "require": {}
+}
