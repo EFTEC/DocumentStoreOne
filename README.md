@@ -13,22 +13,22 @@ A flat document store for PHP that allows multiples concurrencies. It is a minim
 - **Allows multiple concurrences by locking and unlocking a document**. If the document is locked then, it retries until the document is unlocked or fails after a number of retries.
 - One single class with no dependencies.
 - Automatic unlock document locked (by default, every 2 minutes if the file was left locked).
-- It could use **mapreduce** See [example](https://github.com/EFTEC/DocumentStoreOne/blob/master/examples/4_example_read_mapreduce.php)
+- It could use **MapReduce** See [example](https://github.com/EFTEC/DocumentStoreOne/blob/master/examples/4_example_read_mapreduce.php)
 
 ## Test 
 
-In average, a SMB generates 100 invoices per month. So, let's say that a SMB generates 12000 invoices per decade.  
+In average, an SMB generates 100 invoices per month. So, let's say that an SMB generates 12000 invoices per decade.  
 
-Testing generating 12000 invoices with customer, details (around 1-5 lines per detail) and date on a i7/ssd/16gb/windows 64bits.
+Testing generating 12000 invoices with customer, details (around 1-5 lines per detail) and date on an i7/ssd/16gb/windows 64bits.
 
 * Store 12000 invoices 45.303 seconds (reserving a sequence range)  
 * Store 12000 invoices  73.203 seconds (reading a sequence for every new invoice)
 * Store 12000 invoices 49.0286 seconds (reserving a sequence range and using igbinary)   
 * Reading all invoices 60.2332 seconds. (only reading) 
-* Mapreduce all invoices per customers 64.0569 seconds.  
-* Mapreduce all invoices per customers 32.9869 seconds (igbinary)
+* MapReduce all invoices per customers 64.0569 seconds.  
+* MapReduce all invoices per customers 32.9869 seconds (igbinary)
 * Reading all invoices from a customer **0.3 seconds.** (including render the result, see image)
-* Adding a new invoice without recalculating alll the mapreduce 0.011 seconds.
+* Adding a new invoice without recalculating all the MapReduce 0.011 seconds.
   
 ![mapreduce example](https://github.com/EFTEC/DocumentStoreOne/blob/master/doc/mapreduce.jpg "mapreduce on php")
 
@@ -43,10 +43,10 @@ try {
 } catch (Exception $e) {
     die("Unable to create document store. Please, check the folder");
 }
-$flatcon->insertOrUpdate("1",json_encode(array("a1"=>'hello',"a2"=>'world'))); // or you could use serialize/igbinary_serialize
-$doc=$flatcon->get("1");
+$flatcon->insertOrUpdate("somekey1",json_encode(array("a1"=>'hello',"a2"=>'world'))); // or you could use serialize/igbinary_serialize
+$doc=$flatcon->get("somekey1");
 $listKeys=$flatcon->select();
-$flatcon->delete("1");
+$flatcon->delete("somekey1");
 ```
 
 ## Commands
@@ -82,11 +82,11 @@ This command could be nested.
 $flatcon->collection('newcollection')->select(); // it sets and return a query
 ```
 
-> Note, it doesn't validate if the collection is correct.  You must use isCollection to validate if it's right.
+> Note, it doesn't validate if the collection is correct.  You must use isCollection to verify if it's right.
 
 ### createCollection($collection) 
 
-It creates a collection. It returns false if the operation fails, otherwise it returns true
+It creates a collection. It returns false if the operation fails; otherwise it returns true
 
 ```php
 $flatcon->createCollection('newcollection'); 
@@ -94,7 +94,7 @@ $flatcon->createCollection('newcollection');
 
 ### insertOrUpdate($id,$document,[$tries=-1])
 
-inserts a new document (string) in the **$id** indicated. If the document exists then it's updated.  
+inserts a new document (string) in the **$id** indicated. If the document exists, then it's updated.  
 **$tries** indicates the number of tries. The default value is -1 (default number of attempts).  
 
 ```php
@@ -107,7 +107,7 @@ $flatcon->insertOrUpdate("1",$doc));
 
 ### insert($id,$document,[$tries=-1])
 
-Inserts a new document (string) in the **$id** indicated. If the document exists then it returns false.  
+Inserts a new document (string) in the **$id** indicated. If the document exists, then it returns false.  
 **$tries** indicates the number of tries. The default value is -1 (default number of attempts).  
 
 ```php
@@ -119,7 +119,7 @@ $flatcon->insert("1",$doc));
 
 ### update($id,$document,[$tries=-1])
 
-Update a document (string) in the **$id** indicated. If the document doesn't exist then it returns false  
+Update a document (string) in the **$id** indicated. If the document doesn't exist, then it returns false  
 **$tries** indicates the number of tries. The default value is -1 (default number of attempts).  
 
 ```php
@@ -146,8 +146,8 @@ $doc=$flatcon->get("1");
 It reads or generates a new sequence.
 
 a) If the sequence exists, then it's incremented by **$interval** and this value is returned.  
-b) If the sequence doesn't exist, then it's created with **$init** and this value is returned.
-c) If the library is unable to creates a sequence, unable to lock or the sequence exists but it's unable to read then it returns false
+b) If the sequence doesn't exist, then it's created with **$init**, and this value is returned.
+c) If the library is unable to create a sequence, unable to lock or the sequence exists but, it's unable to read, then it returns false
 
 ```php
 $seq=$flatcon->getNextSequence();
@@ -155,7 +155,7 @@ $seq=$flatcon->getNextSequence();
 
 > You could peek a sequence with $id=get('genseq_<name>') however it's not recommended.
 
-> If the sequence is corrupt then it's resetted to $init
+> If the sequence is corrupt then it's reset to $init
 
 > If you need to reserve a list of sequences, you could use **$reserveAdditional**
 
@@ -177,7 +177,7 @@ $found=$flatcon->ifExist("1");
 
 ### delete($id,[$tries=-1])
 
-It deletes the document **$id**.  If the document doesn't exist or it's unable to delete then it returns false.  
+It deletes the document **$id**.  If the document doesn't exist or it's unable to delete, then it returns false.  
 **$tries** indicates the number of tries. The default value is -1 (default number of tries).  
 
 ```php
@@ -204,11 +204,11 @@ $inv=new Invoice();
 DocumentStoreOne::fixCast($inv,$invTmp); //$invTmp is a stdClass();
 ```
 
-> It doesn't work with members that are array of objects.  The array is keep as stdclass.
+> It doesn't work with members that are array of objects.  The array is kept as stdclass.
 
 ## Limits
 - Keys should be of the type A-a,0-9  
-- The limit of document that a collection could hold is based on the document system used. NTFS allows 2 millions of documents per collection.  
+- The limit of documents that a collection could hold is based on the document system used. NTFS allows 2 millions of documents per collection.  
 
 ## Version list
 
