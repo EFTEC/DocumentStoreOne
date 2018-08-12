@@ -22,9 +22,11 @@ In average, a SMB generates 100 invoices per month. So, let's say that a SMB gen
 Testing generating 12000 invoices with customer, details (around 1-5 lines per detail) and date on a i7/ssd/16gb/windows 64bits.
 
 * Store 12000 invoices 45.303 seconds (reserving a sequence range)  
-* Store 12000 invoices  73.203 seconds (reading a sequence every new invoice)  
+* Store 12000 invoices  73.203 seconds (reading a sequence for every new invoice)
+* Store 12000 invoices 49.0286 seconds (reserving a sequence range and using igbinary)   
 * Reading all invoices 60.2332 seconds. (only reading) 
-* Mapreduce all invoices per customers 64.056945 seconds.  
+* Mapreduce all invoices per customers 64.0569 seconds.  
+* Mapreduce all invoices per customers 32.9869 seconds (igbinary)
 * Reading all invoices from a customer **0.3 seconds.** (including render the result, see image)
 * Adding a new invoice without recalculating alll the mapreduce 0.011 seconds.
   
@@ -41,7 +43,7 @@ try {
 } catch (Exception $e) {
     die("Unable to create document store. Please, check the folder");
 }
-$flatcon->insertOrUpdate("1",json_encode(array("a1"=>'hello',"a2"=>'world')));
+$flatcon->insertOrUpdate("1",json_encode(array("a1"=>'hello',"a2"=>'world'))); // or you could use serialize/igbinary_serialize
 $doc=$flatcon->get("1");
 $listKeys=$flatcon->select();
 $flatcon->delete("1");
@@ -49,9 +51,9 @@ $flatcon->delete("1");
 
 ## Commands
 
-### Constructor($baseFolder,$schema)
+### Constructor($baseFolder,$collection)
 
-It creates the DocumentStoreOne instance.   **$baseFolder** should be a folder, and **$schema** (a subfolder) is optional.
+It creates the DocumentStoreOne instance.   **$baseFolder** should be a folder, and **$collection** (a subfolder) is optional.
 
 ```php
 include "lib/DocumentStoreOne.php";
@@ -62,32 +64,32 @@ try {
 }
 ```
 
-### isSchema($schema)
+### isCollection($collection)
 
-Returns true if schema is valid (a subfolder).
+Returns true if collection is valid (a subfolder).
 ```php
-$ok=$flatcon->isSchema('tmp');
+$ok=$flatcon->isCollection('tmp');
 ```
-### schema($schema)
+### collection($collection)
 
-It sets the current schema
+It sets the current collection
 ```php
-$flatcon->schema('newschema'); // it sets a schema.
+$flatcon->collection('newcollection'); // it sets a collection.
 ```
 This command could be nested.  
 
 ```php
-$flatcon->schema('newschema')->select(); // it sets and return a query
+$flatcon->collection('newcollection')->select(); // it sets and return a query
 ```
 
-> Note, it doesn't validate if the schema is right.  You must use isSchema to validate if it's right.
+> Note, it doesn't validate if the collection is correct.  You must use isCollection to validate if it's right.
 
-### createSchema($schema) 
+### createCollection($collection) 
 
-It creates a schema. It returns false if the operation fails, otherwise it returns true
+It creates a collection. It returns false if the operation fails, otherwise it returns true
 
 ```php
-$flatcon->createSchema('newschema'); 
+$flatcon->createCollection('newcollection'); 
 ```
 
 ### insertOrUpdate($id,$document,[$tries=-1])
@@ -185,7 +187,7 @@ $doc=$flatcon->delete("1");
 
 ### select($mask="*")
 
-It returns all the IDs stored on a schema.  
+It returns all the IDs stored on a collection.  
 
 ```php
 $listKeys=$flatcon->select();
@@ -193,12 +195,24 @@ $listKeys=$flatcon->select("invoice_*");
 ```
 > It includes locked documents.
 
+### fixCast (util class)
+
+It converts a stdclass to a specific class. 
+
+```php
+$inv=new Invoice();
+DocumentStoreOne::fixCast($inv,$invTmp); //$invTmp is a stdClass();
+```
+
+> It doesn't work with members that are array of objects.  The array is keep as stdclass.
+
 ## Limits
 - Keys should be of the type A-a,0-9  
-- The limit of document that a schema could hold is based on the document system used. NTFS allows 2 millions of documents per schema.  
+- The limit of document that a collection could hold is based on the document system used. NTFS allows 2 millions of documents per collection.  
 
 ## Version list
 
+- 1.1 2018-08-12 Changed schema with collection.
 - 1.0 2018-08-11 first version
 
 ## Pending

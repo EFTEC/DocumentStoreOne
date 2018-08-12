@@ -13,19 +13,27 @@ include "modelinvoices/Models.php";
 
 $t1=microtime(true);
 
+$igbinary=function_exists('igbinary_serialize');
+
 try {
     $flatcon = new DocumentStoreOne(dirname(__FILE__) . "/base", 'invoices');
 } catch (Exception $e) {
     die("Unable to create document store");
 }
-$flatcon->schema("invoicemap");
+$flatcon->collection("invoicemap");
 $customers=$flatcon->get("invoicexcustomer");
 if (!$customers) {
     die("you must run example_mapreduce_invoice.php before");
 }
-$customers=json_decode($customers,true);
 
-$flatcon->schema("invoices") or die("schema incorrect");
+if ($igbinary) {
+    $customers=igbinary_unserialize($customers);
+} else {
+    $customers=json_decode($customers,true);
+}
+
+
+$flatcon->collection("invoices");
 $numItems=0;
 $totalInvoice=0;
 $idCustomer='Yasmin Trace';
@@ -39,10 +47,13 @@ echo "<h1>Invoices of $idCustomer. It uses mapreduces</h1>";
 echo "<table class='table table-striped table-bordered'>";
 echo "<thead class='thead-dark'><tr><th>Invoice #</th><th>Date</th><th>Detail Num</th></tr></thead>";
 foreach($listInvoices as $i) {
-
-    $invTmp=json_decode($flatcon->get($i)); // $invTmp is stdclass
-    $inv=new Invoice();
-    DocumentStoreOne::fixCast($inv,$invTmp); // $inv is a Invoice class. However, $inv->details is a stdClass[]
+    if ($igbinary) {
+        $inv=igbinary_unserialize($flatcon->get($i));
+    } else {
+        $invTmp = json_decode($flatcon->get($i)); // $invTmp is stdclass
+        $inv = new Invoice();
+        DocumentStoreOne::fixCast($inv, $invTmp); // $inv is a Invoice class. However, $inv->details is a stdClass[]
+    }
 
     echo "<tr><td>{$inv->idInvoice}</td><td>{$inv->date}</td><td><table class='table table-bordered'>";
     echo "<thead class='thead-dark'><tr><th>Product #</th><th>Price</th><th>Amount</th></tr></thead>";

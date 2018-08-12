@@ -24,19 +24,27 @@ $totalInvoice=0;
 
 $listInvoices=$flatcon->select();
 
+$igbinary=function_exists('igbinary_serialize');
+
 foreach($listInvoices as $i) {
-    echo "<pre>";
-    $invTmp=json_decode($flatcon->get($i)); // $invTmp is stdclass
-    $inv=new Invoice();
-    DocumentStoreOne::fixCast($inv,$invTmp); // $inv is a Invoice class. However, $inv->details is a stdClass[]
-    var_dump($inv);
+    if ($i!='genseq_seq') { // we skip the sequence
+        echo "<pre>";
+        if ($igbinary) {
+            $inv = igbinary_unserialize($flatcon->get($i));
+        } else {
+            $invTmp = json_decode($flatcon->get($i)); // $invTmp is stdclass
+            $inv = new Invoice();
+            DocumentStoreOne::fixCast($inv, $invTmp); // $inv is a Invoice class. However, $inv->details is a stdClass[]
+        }
+        var_dump($inv);
 
-    foreach($inv->details as $det) {
-        $numItems+=$det->amount;
-        $totalInvoice+=$det->amount*$det->unitPrice;
+        foreach ($inv->details as $det) {
+            $numItems += $det->amount;
+            $totalInvoice += $det->amount * $det->unitPrice;
+        }
+
+        echo "</pre>";
     }
-
-    echo "</pre>";
 }
 $t2=microtime(true);
 

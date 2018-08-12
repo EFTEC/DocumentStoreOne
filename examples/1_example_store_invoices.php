@@ -1,4 +1,8 @@
 <?php
+@ob_start();
+ob_implicit_flush(true);
+ob_end_flush();
+
 @set_time_limit(60*60); // 1 hour.
 
 use eftec\DocumentStoreOne\DocumentStoreOne;
@@ -8,6 +12,11 @@ use eftec\DocumentStoreOne\DocumentStoreOne;
  * @author Jorge Castro Castillo jcastro@eftec.cl
  * @license LGPLv3
  */
+echo "loading, please wait 1-5 minutes<br>";
+
+@flush();
+@ob_flush();
+
 
 
 include "../lib/DocumentStoreOne.php";
@@ -26,6 +35,9 @@ $names=array('Glendora Bowland','Magan Brungardt','Sarah Lamphere','Lavinia Shau
 $TOTALINVOICES=100*12*10;
 
 $numInv=$flatcon->getNextSequence("seq",-1,1,1,$TOTALINVOICES); // it reserves a big chunk at the same time.
+
+$igbinary=function_exists('igbinary_serialize');
+
 for($i=1;$i<=$TOTALINVOICES;$i++) {
     //$numInv=$flatcon->getNextSequence(); // it slows down the load. For this exercise, it's better to reserve a number of sequences.
     $inv=new Invoice($numInv);
@@ -36,7 +48,13 @@ for($i=1;$i<=$TOTALINVOICES;$i++) {
         $det=new InvoiceDetail($e,rand(0,2000),rand(1,10));
         $inv->details[]=$det;
     }
-    $flatcon->insertOrUpdate($numInv,json_encode($inv));
+    if ($igbinary) {
+        $doc=igbinary_serialize($inv);
+    } else {
+        $doc=json_encode($inv);
+    }
+
+    $flatcon->insertOrUpdate($numInv,$doc);
     $numInv++;
 }
 
