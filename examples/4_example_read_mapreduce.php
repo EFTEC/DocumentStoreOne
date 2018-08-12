@@ -45,6 +45,7 @@ foreach($listInvoices as $i) {
     DocumentStoreOne::fixCast($inv,$invTmp); // $inv is a Invoice class. However, $inv->details is a stdClass[]
 
     echo "<tr><td>{$inv->idInvoice}</td><td>{$inv->date}</td><td><table class='table table-bordered'>";
+    echo "<thead class='thead-dark'><tr><th>Product #</th><th>Price</th><th>Amount</th></tr></thead>";
     foreach($inv->details as $d) {
         echo "<tr><td>".$d->idProduct."</td><td>".$d->unitPrice."</td><td>".$d->amount."</td></tr>";
     }

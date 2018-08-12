@@ -7,7 +7,21 @@ A flat document store for PHP that allows multiples concurrencies. It is a minim
 - **Allows multiple concurrences by locking and unlocking a document**. If the document is locked then, it retries until the document is unlocked or fails after a number of retries.
 - One single class with no dependencies.
 - Automatic unlock document locked (by default, every 2 minutes if the file was left locked).
-- It could use **mapreduce**
+- It could use **mapreduce** See [example](https://github.com/EFTEC/DocumentStoreOne/blob/master/examples/4_example_read_mapreduce.php)
+
+## Test 
+
+In average, a SMB generates 100 invoices per month. So, let's say that a SMB generates 12000 invoices per decade.  
+
+Testing generating 12000 invoices with customer, details (around 1-5 lines per detail) and date on a i7/ssd/16gb/windows 64bits.
+
+* Store 12000 invoices 45 seconds (reserving a sequence range)  
+* Store 12000 invoices  63 seconds (reading a sequence every new invoice)  
+* Reading all invoices 30 seconds. (only reading) 
+* Mapreduce all invoices per customers 30 seconds.  
+* Reading all invoices from a customer **0.3 seconds.**
+  
+
 
 
 ## Usage
