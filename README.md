@@ -1,12 +1,11 @@
 # DocumentStoreOne
 A flat document store for PHP that allows multiples concurrencies. It is a minimalist alternative to MongoDB without the overhead of installing a new service.
 
-[![Packagist](https://img.shields.io/packagist/l/doctrine/orm.svg)]()
+[![License](https://img.shields.io/badge/license-LGPLV3-blue.svg)]()
 [![Maintenance](https://img.shields.io/maintenance/yes/2018.svg)]()
-[![npm](https://img.shields.io/badge/npm-%3E4.1-blue.svg)]()
 [![php](https://img.shields.io/badge/php->5.4-green.svg)]()
 [![php](https://img.shields.io/badge/php-7.x-green.svg)]()
-[![CocoaPods](https://img.shields.io/badge/docs-40%25-yellow.svg)]()
+[![Doc](https://img.shields.io/badge/docs-100%25-green.svg)]()
 
 ## Key features
 - Single key based.
@@ -22,11 +21,12 @@ In average, a SMB generates 100 invoices per month. So, let's say that a SMB gen
 
 Testing generating 12000 invoices with customer, details (around 1-5 lines per detail) and date on a i7/ssd/16gb/windows 64bits.
 
-* Store 12000 invoices 45 seconds (reserving a sequence range)  
-* Store 12000 invoices  63 seconds (reading a sequence every new invoice)  
-* Reading all invoices 30 seconds. (only reading) 
-* Mapreduce all invoices per customers 30 seconds.  
-* Reading all invoices from a customer **0.3 seconds.**
+* Store 12000 invoices 45.303 seconds (reserving a sequence range)  
+* Store 12000 invoices  73.203 seconds (reading a sequence every new invoice)  
+* Reading all invoices 60.2332 seconds. (only reading) 
+* Mapreduce all invoices per customers 64.056945 seconds.  
+* Reading all invoices from a customer **0.3 seconds.** (including render the result, see image)
+* Adding a new invoice without recalculating alll the mapreduce 0.011 seconds.
   
 ![mapreduce example](https://github.com/EFTEC/DocumentStoreOne/blob/master/doc/mapreduce.jpg "mapreduce on php")
 
