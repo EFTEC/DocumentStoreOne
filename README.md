@@ -47,10 +47,11 @@ $ok=$flatcon->isSchema('tmp');
 ```
 ### schema($schema)
 
-It sets a schema
+It sets the current schema
 ```php
 $flatcon->schema('newschema'); // it sets a schema.
 ```
+This command could be nested.  
 
 ```php
 $flatcon->schema('newschema')->select(); // it sets and return a query
@@ -58,6 +59,13 @@ $flatcon->schema('newschema')->select(); // it sets and return a query
 
 > Note, it doesn't validate if the schema is right.  You must use isSchema to validate if it's right.
 
+### createSchema($schema) 
+
+It creates a schema. It returns false if the operation fails, otherwise it returns true
+
+```php
+$flatcon->createSchema('newschema'); 
+```
 
 ### insertOrUpdate($id,$document,[$tries=-1])
 
