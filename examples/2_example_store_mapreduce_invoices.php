@@ -25,7 +25,7 @@ $totalInvoice=0;
 
 $listInvoices=$flatcon->select();
 
-$customers=[];
+$customers=[]; // It's an example to mapreduces. In this case, it reduces the invoice per customers so it generates a customer x invoice table
 
 foreach($listInvoices as $i) {
     if ($i!='genseq_seq') { // we skip the sequence

@@ -7,6 +7,8 @@ A flat document store for PHP that allows multiples concurrencies. It is a minim
 - **Allows multiple concurrences by locking and unlocking a document**. If the document is locked then, it retries until the document is unlocked or fails after a number of retries.
 - One single class with no dependencies.
 - Automatic unlock document locked (by default, every 2 minutes if the file was left locked).
+- It could use **mapreduce**
+
 
 ## Usage
 
