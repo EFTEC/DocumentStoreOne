@@ -4,7 +4,7 @@
     "type": "library",
     "keywords": ["blade","template","view","php"],
     "homepage": "https://github.com/EFTEC/DocumentStoreOne",
-    "license": "LGPLV3",
+    "license": "LGPL-3.0-only",
     "authors": [
         {
             "name": "Jorge Castro Castillo",
