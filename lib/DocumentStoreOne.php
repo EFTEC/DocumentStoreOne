@@ -19,6 +19,8 @@ class DocumentStoreOne {
     var $defaultNumRetry=300;
     /** @var int Interval (in microseconds) between retries. 100000 means 0.1 seconds */
     var $intervalBetweenRetry=100000;
+    /** @var string Default extension (with dot) of the document */
+    var $docExt=".json";
 
     /**
      * DocumentStoreOne constructor.
@@ -46,7 +48,40 @@ class DocumentStoreOne {
         $file = mb_ereg_replace("([^\w\s\d\-_~,;\[\]\(\).])", '', $id);
         $file = mb_ereg_replace("([\.]{2,})", '', $file);
 
-        return $this->getPath()."/".$file.".json";
+        return $this->getPath()."/".$file.$this->docExt;
+    }
+
+    /**
+     * It gets the next sequence. If the sequence doesn't exist, it generates a new one with 1.
+     * You could peek a sequence with get('genseq_<name>')
+     * If the sequence is corrupt then it's resetted.
+     * @param string $name Name of the sequence.
+     * @param int $tries
+     * @param int $init The initial value of the sequence (if it's created)
+     * @param int $interval The interval between each sequence. It could be negative.
+     * @param int $reserveAdditional Reserve an additional number of sequence. It's useful when you want to generates many sequences at once.
+     * @return bool|int It returns false if it fails to lock the sequence or if it's unable to read thr sequence. Otherwise it returns the sequence
+     */
+    public function getNextSequence($name="seq",$tries=-1,$init=1,$interval=1,$reserveAdditional=0) {
+        $id="genseq_".$name;
+        $file =$this->filename($id);
+        if ($this->lockFolder($file,$tries)) {
+            if (file_exists($file)) {
+                $read=@file_get_contents($file);
+                if ($read===false) {
+                    $this->unlockFolder($file);
+                    return false; // file exists but i am unable to read it.
+                }
+                $read=(is_numeric($read))?($read+$interval):$init; // if the value stored is numeric, then we add one, otherwise, it starts with 1
+            } else {
+                $read=$init;
+            }
+            $write = @file_put_contents($file, $read+$reserveAdditional, LOCK_EX);
+            $this->unlockFolder($file);
+            return ($write===false)?false:$read;
+        } else {
+            return false; // unable to lock
+        }
     }
 
     /**
@@ -123,13 +158,23 @@ class DocumentStoreOne {
     }
 
     /**
-     * Set the current schema
+     * Check a schema
      * @param $schema
-     * @return bool If not schema
+     * @return bool It returns false if it's not a schema (a valid folder)
      */
-    public function setSchema($schema) {
+    public function isSchema($schema) {
         $this->schema=$schema;
         return is_dir($this->getPath());
+    }
+
+    /**
+     * Set the current schema
+     * @param $schema
+     * @return DocumentStoreOne
+     */
+    public function schema($schema) {
+        $this->schema=$schema;
+        return $this;
     }
 
     /**
@@ -147,12 +192,13 @@ class DocumentStoreOne {
 
     /**
      * List all the Ids in a schema.
+     * @param string $mask see http://php.net/manual/en/function.glob.php
      * @return array|false
      */
-    public function select() {
-        $list = glob($this->database."/".$this->schema."/*.json");
+    public function select($mask="*") {
+        $list = glob($this->database."/".$this->schema."/".$mask.$this->docExt);
         foreach ($list as &$file) {
-            $file=basename($file,'.json');
+            $file=basename($file,$this->docExt);
         }
         return $list;
     }
@@ -192,14 +238,14 @@ class DocumentStoreOne {
      * Delete document.
      * @param string $id Id of the document
      * @param int $tries
-     * @return bool
+     * @return bool if it's unable to unlock or the document doesn't exist.
      */
     public function delete($id,$tries=-1) {
         $file =$this->filename($id);
         if ($this->lockFolder($file,$tries)) {
-            unlink($file);
+            $r=@unlink($file);
             $this->unlockFolder($file);
-            return true;
+            return $r;
         } else {
             return false;
         }
@@ -231,13 +277,50 @@ class DocumentStoreOne {
     }
 
     /**
-     * Unlocks a filename
+     * Unlocks a document
      * @param $filepath
      * @return bool
      */
-    public function unlockFolder($filepath){
+    private function unlockFolder($filepath){
         $unlockname= $filepath.".lock";
         return @rmdir($unlockname);
+    }
+
+    /**
+     * Fix the cast of an object.
+     * Usage utilCache::fixCast($objectRightButEmpty,$objectBadCast);
+     * @param object|array $destination Object may be empty with the right cast.
+     * @param object|array $source  Object with the wrong cast.
+     * @return void
+     */
+    public static function fixCast(&$destination,$source)
+    {
+        if (is_array($source)) {
+            $getClass=get_class($destination[0]);
+            $array=array();
+            foreach($source as $sourceItem) {
+                $obj = new $getClass();
+                self::fixCast($obj,$sourceItem);
+                $array[]=$obj;
+            }
+            $destination=$array;
+        } else {
+            $sourceReflection = new \ReflectionObject($source);
+            $sourceProperties = $sourceReflection->getProperties();
+            foreach ($sourceProperties as $sourceProperty) {
+                $name = $sourceProperty->getName();
+                if (is_object(@$destination->{$name})) {
+                    if (get_class(@$destination->{$name})=="DateTime") {
+                        // source->name is a stdclass, not a DateTime, so we could read the value with the field date
+                        $destination->{$name}=new \DateTime($source->$name->date);
+                    } else {
+                        self::fixCast($destination->{$name}, $source->$name);
+                    }
+                } else {
+                    $destination->{$name} = $source->$name;
+                }
+            }
+        }
     }
 }
 

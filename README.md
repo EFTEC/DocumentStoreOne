@@ -11,7 +11,6 @@ A flat document store for PHP that allows multiples concurrencies. It is a minim
 ## Usage
 
 ```php
-<?php
 include "lib/DocumentStoreOne.php";
 use eftec\DocumentStoreOne\DocumentStoreOne;
 try {
@@ -39,6 +38,26 @@ try {
     die("Unable to create document store. Please, check the folder");
 }
 ```
+
+### isSchema($schema)
+
+Returns true if schema is valid (a subfolder).
+```php
+$ok=$flatcon->isSchema('tmp');
+```
+### schema($schema)
+
+It sets a schema
+```php
+$flatcon->schema('newschema'); // it sets a schema.
+```
+
+```php
+$flatcon->schema('newschema')->select(); // it sets and return a query
+```
+
+> Note, it doesn't validate if the schema is right.  You must use isSchema to validate if it's right.
+
 
 ### insertOrUpdate($id,$document,[$tries=-1])
 
@@ -89,6 +108,28 @@ $doc=$flatcon->get("1");
 
 > If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 300 that it's around 30 seconds)
 
+### getNextSequence($name="seq",$tries=-1,$init=1,$interval=1,$reserveAdditional=0)
+
+It reads or generates a new sequence.
+
+a) If the sequence exists, then it's incremented by **$interval** and this value is returned.  
+b) If the sequence doesn't exist, then it's created with **$init** and this value is returned.
+c) If the library is unable to creates a sequence, unable to lock or the sequence exists but it's unable to read then it returns false
+
+```php
+$seq=$flatcon->getNextSequence();
+```
+
+> You could peek a sequence with $id=get('genseq_<name>') however it's not recommended.
+
+> If the sequence is corrupt then it's resetted to $init
+
+> If you need to reserve a list of sequences, you could use **$reserveAdditional**
+
+```php
+$seq=$flatcon->getNextSequence("seq",-1,1,1,100); // if $seq=1, then it's reserved up to the 101. The next value will be 102.
+```
+
 ### ifExist($id,[$tries=-1])
 
 It checks if the document **$id** exists.  It returns true if the document exists. Otherwise, it returns false.  
@@ -111,12 +152,13 @@ $doc=$flatcon->delete("1");
 ```
 > If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 300 that it's around 30 seconds)
 
-### list()
+### select($mask="*")
 
 It returns all the IDs stored on a schema.  
 
 ```php
 $listKeys=$flatcon->select();
+$listKeys=$flatcon->select("invoice_*");
 ```
 > It includes locked documents.
 
