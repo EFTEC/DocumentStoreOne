@@ -21,7 +21,7 @@ Testing generating 12000 invoices with customer, details (around 1-5 lines per d
 * Mapreduce all invoices per customers 30 seconds.  
 * Reading all invoices from a customer **0.3 seconds.**
   
-
+![mapreduce example](https://github.com/EFTEC/DocumentStoreOne/blob/master/doc/mapreduce.jpg "mapreduce on php")
 
 
 ## Usage
