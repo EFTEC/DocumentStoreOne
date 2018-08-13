@@ -3,7 +3,7 @@ namespace eftec\DocumentStoreOne;
 
 /**
  * Class DocumentStoreOne
- * @version 1.1 2018-08-12
+ * @version 1.2 2018-08-12
  * @author Jorge Castro Castillo jcastro@eftec.cl
  * @license LGPLv3
  */
@@ -335,7 +335,7 @@ class DocumentStoreOne {
         }
         return ($try<$maxRetry);
     }
-    
+
     /**
      * Unlocks a document
      * @param $filepath
