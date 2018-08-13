@@ -241,13 +241,58 @@ $ds=new DocumentStoreOne();
 $ds->maxLockTime=300;
 ```
 
+## MapReduce
+
+It is easy.  If you store an object (or array of objects), then you don't need to map it.
+
+Let's say the next exercise, we have a list of purchases
+
+|id|customer|age|sex|productpurchase|amount|
+|---|---|---|---|---|---|
+|14|john|33|m|33|3|
+|25|anna|22|f|32|1|
+
+|productcode|unitprice|
+|---|---|
+|32|23.3|
+|33|30|
+
+
+John purchased 3 products with the code 33.  The products 33 costs $23.3 per unit.
+
+Question, how much every customer paid?.
+
+> It's a simple exercise, it's more suitable for a relational database (select * from purchases inner join products).
+> However, if the document is long then it's here where a document store shines.
+
+```php
+// 1) open the store
+$ds=new DocumentStoreOne('base','purchases'); // we open the document store and selected the collection purchase.
+// 2) reading all products
+// if the list of products holds in memory then, we could store the whole list in a single document (listproducts key)
+$products=$ds->collection('products')->get('listproducts');
+// 3) we read the keys of every purchases. It could be slow and it should be a limited set (<100k rows)    
+$purchases=$ds->collection('purchases')->select(); // they are keys such as 14,15...
+
+$customerXPurchase=[];
+// 4) We read every purchase. It is also slow.  Then we merge the result and obtained the final result
+foreach($purchases as $k) {
+    $purchase=unserialize( $ds->get($k));
+    @$customerXPurchase[$purchase->customer]+=($purchase->amount * @$products[$purchase->productpurchase]); // we add the amount
+}
+// 5) Finally, we store the result.
+$ds->collection('total')->insertOrUpdate(serialize($customerXPurchase),'customerXPurchase'); // we store the result.```
+```
+
+Since it's done on code then it's possible to create an hybrid system (relational database+store+memory cache)
 
 ## Limits
-- Keys should be of the type A-a,0-9  
+- Keys should be of the type A-a,0-9. In windows, keys are not case sensitive. 
 - The limit of documents that a collection could hold is based on the document system used. NTFS allows 2 millions of documents per collection.  
 
 ## Version list
 
+- 1.2 2018-08-12 Small fixes.
 - 1.1 2018-08-12 Changed schema with collection.
 - 1.0 2018-08-11 first version
 

@@ -36,7 +36,7 @@ class DocumentStoreOne {
         $this->database = $database;
         $this->collection = $collection;
         if (!is_dir($this->getPath())) {
-            throw new \Exception("Incorrect folder");
+            throw new \Exception("Tsk Tsk, the folder is incorrect or I'm not unable to read  it: ".$this->getPath());
         }
     }
 

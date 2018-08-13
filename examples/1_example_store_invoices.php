@@ -67,3 +67,5 @@ for($i=1;$i<=$TOTALINVOICES;$i++) {
 
 $t2=microtime(true);
 echo "<br>Generated in ".($t2-$t1)." seconds<br>";
+
+
