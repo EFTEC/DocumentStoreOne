@@ -284,6 +284,11 @@ foreach($purchases as $k) {
 $ds->collection('total')->insertOrUpdate(serialize($customerXPurchase),'customerXPurchase'); // we store the result.```
 ```
 
+|customer|value|
+|---|---|
+|john|69.9|
+|anna|30|
+
 Since it's done on code then it's possible to create an hybrid system (relational database+store+memory cache)
 
 ## Limits
