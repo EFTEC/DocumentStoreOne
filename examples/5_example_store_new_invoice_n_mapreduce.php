@@ -29,7 +29,9 @@ $idCustomer=rand(0,count($names)-1);
 $inv->customer=new Customer($names[$idCustomer],"Fake Street #".$idCustomer,"555-2444".$idCustomer);
 $numDet=rand(1,3);
 for($e=0;$e<$numDet;$e++) {
-    $det=new InvoiceDetail($e,rand(0,2000),rand(1,10));
+    $numProd=rand(0,count($drinks)-1);
+    $product=new Product($numProd,$drinks[$numProd]);
+    $det=new InvoiceDetail($product,rand(0,2000),rand(1,10));
     $inv->details[]=$det;
 }
 

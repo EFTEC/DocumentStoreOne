@@ -42,14 +42,13 @@ class DocumentStoreOne {
 
     /**
      * Convert Id to a full filename
-     * @param $id
+     * @param string $id
      * @return string full filename
      */
     private function filename($id) {
 
-        $file = mb_ereg_replace("([^\w\s\d\-_~,;\[\]\(\).])", '', $id);
-        $file = mb_ereg_replace("([\.]{2,})", '', $file);
-
+        //$file =base64_encode($id); //it's unsable on windows because windows is not case sensitive.
+        $file =$id;
         return $this->getPath()."/".$file.$this->docExt;
     }
 
@@ -336,7 +335,7 @@ class DocumentStoreOne {
         }
         return ($try<$maxRetry);
     }
-
+    
     /**
      * Unlocks a document
      * @param $filepath
@@ -349,8 +348,9 @@ class DocumentStoreOne {
         return @rmdir($unlockname);
     }
 
+
     /**
-     * Fix the cast of an object.
+     * Util function to fix the cast of an object.
      * Usage utilCache::fixCast($objectRightButEmpty,$objectBadCast);
      * @param object|array $destination Object may be empty with the right cast.
      * @param object|array $source  Object with the wrong cast.
@@ -384,6 +384,18 @@ class DocumentStoreOne {
                 }
             }
         }
+    }
+
+    public function debugFile($file,$txt) {
+        $fz=@filesize($file);
+        if ($fz>100000) {
+            // mas de 100kb = reducirlo a cero.
+            $fp = fopen($file, 'w');
+        } else {
+            $fp = fopen($file, 'a');
+        }
+        fwrite($fp, $txt."\n");
+        fclose($fp);
     }
 }
 

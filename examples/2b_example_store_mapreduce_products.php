@@ -13,7 +13,7 @@ use eftec\DocumentStoreOne\DocumentStoreOne;
 
 include "../lib/DocumentStoreOne.php";
 include "modelinvoices/Models.php";
-echo "generating map reduce for invoice per customer...<br>";
+echo "generating map reduce for invoice per product...<br>";
 @flush();
 @ob_flush();
 
@@ -29,7 +29,7 @@ try {
 
 $listInvoices=$flatcon->select();
 
-$customers=[]; // It's an example to mapreduces. In this case, it reduces the invoice per customers so it generates a customer x invoice table
+$products=[]; // It's an example to mapreduces. In this case, it reduces the invoice per customers so it generates a customer x invoice table
 
 $igbinary=function_exists('igbinary_serialize');
 
@@ -43,14 +43,16 @@ foreach($listInvoices as $i) {
             $inv = new Invoice();
             DocumentStoreOne::fixCast($inv, $invTmp); // $inv is a Invoice class. However, $inv->details is a stdClass[]
         }
+        foreach($inv->details as $det) {
+            $products[$det->product->name][] = $i;
+        }
 
-        $customers[$inv->customer->name][] = $i;
     }
 }
 if ($igbinary) {
-    $flatcon->collection("invoicemap")->insertOrUpdate("invoicexcustomer", igbinary_serialize($customers));
+    $flatcon->collection("invoicemap")->insertOrUpdate("invoicexproduct", igbinary_serialize($products));
 } else {
-    $flatcon->collection("invoicemap")->insertOrUpdate("invoicexcustomer", json_encode($customers));
+    $flatcon->collection("invoicemap")->insertOrUpdate("invoicexproduct", json_encode($products));
 }
 $t2=microtime(true);
 echo "store mapreduce microseconds :".($t2-$t1)." seconds.<br>";

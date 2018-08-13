@@ -1,5 +1,5 @@
 # DocumentStoreOne
-A flat document store for PHP that allows multiples concurrencies. It is a minimalist alternative to MongoDB without the overhead of installing a new service.
+A document store for PHP that allows multiples concurrencies. It is a minimalist alternative to MongoDB or CouchDB without the overhead of installing a new service.
 
 [![License](https://img.shields.io/badge/license-LGPLV3-blue.svg)]()
 [![Maintenance](https://img.shields.io/maintenance/yes/2018.svg)]()
@@ -32,6 +32,22 @@ Testing generating 12000 invoices with customer, details (around 1-5 lines per d
   
 ![mapreduce example](https://github.com/EFTEC/DocumentStoreOne/blob/master/doc/mapreduce.jpg "mapreduce on php")
 
+## Concurrency test
+
+A test with 100 concurrent test (write and read), 10 times.
+
+|N°|	Reads|	(ms)|	Reads|	Error|
+|---|---|---|---|---|
+|1|100|7471|100|0|
+|2|100|7751|100|0|
+|3|100|7490|100|0|
+|4|100|7480|100|0|
+|5|100|8199|100|0|
+|6|100|7451|100|0|
+|7|100|7476|100|0|
+|8|100|7244|100|0|
+|9|100|7573|100|0|
+|10|100|7818|100|0|
 
 ## Usage
 
@@ -217,4 +233,5 @@ DocumentStoreOne::fixCast($inv,$invTmp); //$invTmp is a stdClass();
 
 ## Pending
 
-- Transactional (allows to commit or rollback a multiple step transaction)
+- Transactional (allows to commit or rollback a multiple step transaction). It's in evaluation.
+- Different strategy of lock (folder,memcache,redis and apcu)
