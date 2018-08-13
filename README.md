@@ -222,6 +222,26 @@ DocumentStoreOne::fixCast($inv,$invTmp); //$invTmp is a stdClass();
 
 > It doesn't work with members that are array of objects.  The array is kept as stdclass.
 
+## DocumentStoreOne Fields
+
+The next fields are public and they could be changed during runtime
+
+|field|Type|
+|---|---|
+|$database|string root folder of the database|
+|$collection|string Current collection (subfolder) of the database|
+|$maxLockTime=120|int Maximium duration of the lock (in seconds). By default it's 2 minutes |
+|$defaultNumRetry=300|int Default number of retries. By default it tries 300x0.1sec=30 seconds |
+|$intervalBetweenRetry=100000|int Interval (in microseconds) between retries. 100000 means 0.1 seconds |
+|$docExt=".dson"|string Default extension (with dot) of the document |
+
+Example: 
+```php
+$ds=new DocumentStoreOne();
+$ds->maxLockTime=300;
+```
+
+
 ## Limits
 - Keys should be of the type A-a,0-9  
 - The limit of documents that a collection could hold is based on the document system used. NTFS allows 2 millions of documents per collection.  
