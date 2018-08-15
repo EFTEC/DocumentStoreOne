@@ -348,6 +348,31 @@ class DocumentStoreOne {
     }
 
     /**
+     * Copy a document. If the destination exists, it's replaced.
+     * @param string $idOrigin
+     * @param string$idDestination
+     * @param int $tries
+     * @return bool true if the operation is correct, otherwise it returns false (unable to lock / unable to copy)
+     */
+    public function copy($idOrigin,$idDestination,$tries=-1) {
+        $fileOrigin =$this->filename($idOrigin);
+        $fileDestination =$this->filename($idDestination);
+        if ($this->lock($fileOrigin,$tries)) {
+            if ($this->lock($fileDestination,$tries)) {
+                $r=@copy($fileOrigin,$fileDestination);
+                $this->unlock($fileOrigin);
+                $this->unlock($fileDestination);
+                return $r;
+            } else {
+                $this->unlock($fileOrigin);
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
+    /**
      * It locks a file
      * @param $filepath
      * @param int $maxRetry
