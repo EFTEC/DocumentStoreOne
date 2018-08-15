@@ -67,16 +67,37 @@ $flatcon->delete("somekey1");
 
 ## Commands
 
-### Constructor($baseFolder,$collection)
+### Constructor($baseFolder,$collection,$strategy=DocumentStoreOne::DSO_AUTO,$server="")
 
 It creates the DocumentStoreOne instance.   **$baseFolder** should be a folder, and **$collection** (a subfolder) is optional.
 
+|strategy|type|server|benchmark|
+|---|---|---|---|
+|DSO_AUTO|It sets the best available strategy (default)|depends|-|
+|DSO_FOLDER|It uses a folder for lock/unlock a document|-|0.3247|
+|DSO_APCU|It uses APCU for lock/unlock a document|-|0.1480|
+|DSO_MEMCACHE|It uses MEMCACHE for lock/unlock a document|localhost:11211|0.1493|
+|DSO_REDIS|It uses REDIS for lock/unlock a document|localhost:6379|2.5403 (worst)|
+
+Benchmark how much time (in seconds) it takes to add 100 inserts.   
+
 ```php
+use eftec\DocumentStoreOne\DocumentStoreOne;
 include "lib/DocumentStoreOne.php";
 try {
-    $flatcon = new \eftec\DocumentStoreOne\DocumentStoreOne(dirname(__FILE__) . "/base", 'tmp');
+    $flatcon = new DocumentStoreOne(dirname(__FILE__) . "/base", 'tmp');
 } catch (Exception $e) {
-    die("Unable to create document store. Please, check the folder");
+    die("Unable to create document store.".$e->getMessage());
+}
+```
+
+```php
+use eftec\DocumentStoreOne\DocumentStoreOne;
+include "lib/DocumentStoreOne.php";
+try {
+    $flatcon = new DocumentStoreOne("/base", 'tmp',DocumentStoreOne::DSO_MEMCACHE,"localhost:11211");
+} catch (Exception $e) {
+    die("Unable to create document store.".$e->getMessage());
 }
 ```
 
@@ -309,6 +330,7 @@ Since it's done on code then it's possible to create an hybrid system (relationa
 
 ## Version list
 
+- 1.3 2018-08-15 Added strategy of lock.
 - 1.2 2018-08-12 Small fixes.
 - 1.1 2018-08-12 Changed schema with collection.
 - 1.0 2018-08-11 first version

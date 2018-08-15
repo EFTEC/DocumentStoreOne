@@ -3,7 +3,7 @@ namespace eftec\DocumentStoreOne;
 
 /**
  * Class DocumentStoreOne
- * @version 1.2 2018-08-12
+ * @version 1.3 2018-08-15
  * @author Jorge Castro Castillo jcastro@eftec.cl
  * @license LGPLv3
  */
@@ -23,20 +23,88 @@ class DocumentStoreOne {
     var $docExt=".dson";
     /** @var null|string[] Indicates if it's locked manually. By default, every operation locks the document */
     private $manualLock=null;
+    /** @var int DocumentStoreOne::DSO_* */
+    var $strategy=self::DSO_FOLDER;
+    /** @var \Memcache */
+    private $memcache;
+    /** @var \Redis */
+    var $redis;
+    const DSO_AUTO=0;
+    const DSO_FOLDER=1;
+    const DSO_APCU=2;
+    const DSO_MEMCACHE=3;
+    const DSO_REDIS=4;
 
     /**
      * DocumentStoreOne constructor.
      * @example $flatcon=new DocumentStoreOne(dirname(__FILE__)."/base",'collectionFolder');
      * @param string $database root folder of the database
      * @param string $collection collection (subfolder) of the database. If the collection is empty then it uses the root folder.
+     * @param int $strategy DocumentStoreOne::DSO_*
+     * @param string $server Used for memcache (localhost:11211) and redis
      * @throws \Exception
      */
-    public function __construct($database, $collection='')
+    public function __construct($database, $collection='',$strategy=self::DSO_AUTO,$server="")
     {
         $this->database = $database;
         $this->collection = $collection;
+
+
+        //$r=$memcache->connect(MEMCACHE_SERVER, MEMCACHE_PORT);
+        $this->setStrategy($strategy,$server);
+
+
         if (!is_dir($this->getPath())) {
             throw new \Exception("Tsk Tsk, the folder is incorrect or I'm not unable to read  it: ".$this->getPath());
+        }
+    }
+
+    /**
+     * @param int $strategy DocumentStoreOne::DSO_*
+     * @param string $server
+     * @throws \Exception
+     */
+    public function setStrategy($strategy, $server="") {
+
+        if($strategy==self::DSO_AUTO) {
+            if (!function_exists("apcu_add")) {
+                $this->strategy=self::DSO_APCU;
+            } else {
+                if (!class_exists("\Memcache")) {
+                    $this->strategy=self::DSO_MEMCACHE;
+                } else {
+                    $this->strategy=self::DSO_FOLDER;
+                }
+            }
+        } else {
+            $this->strategy=$strategy;
+        }
+        switch ($strategy) {
+            case self::DSO_FOLDER:
+                break;
+            case self::DSO_APCU:
+                if (!function_exists("apcu_add")) throw new \Exception("APCU is not defined");
+                break;
+            case self::DSO_MEMCACHE:
+                if (!class_exists("\Memcache")) throw new \Exception("Memcache is not defined");
+                $this->memcache=new \Memcache();
+                $host=explode(':',$server);
+                $r=@$this->memcache->pconnect($host[0],$host[1]);
+                if (!$r) {
+                    throw new \Exception("Memcache is not open");
+                }
+                break;
+            case self::DSO_REDIS:
+                if (!class_exists("\Redis")) throw new \Exception("Redis is not defined");
+                $this->redis=new \Redis();
+                $host=explode(':',$server);
+                $r=@$this->redis->pconnect($host[0],$host[1],30); // 30 seconds timeout
+                if (!$r) {
+                    throw new \Exception("Redis is not open");
+                }
+                break;
+            default:
+                throw new\Exception("Strategy not defined");
         }
     }
 
@@ -68,11 +136,11 @@ class DocumentStoreOne {
     public function getNextSequence($name="seq",$tries=-1,$init=1,$interval=1,$reserveAdditional=0) {
         $id="genseq_".$name;
         $file =$this->filename($id).".seq";
-        if ($this->lockFolder($file,$tries)) {
+        if ($this->lock($file,$tries)) {
             if (file_exists($file)) {
                 $read=@file_get_contents($file);
                 if ($read===false) {
-                    $this->unlockFolder($file);
+                    $this->unlock($file);
                     return false; // file exists but i am unable to read it.
                 }
                 $read=(is_numeric($read))?($read+$interval):$init; // if the value stored is numeric, then we add one, otherwise, it starts with 1
@@ -80,7 +148,7 @@ class DocumentStoreOne {
                 $read=$init;
             }
             $write = @file_put_contents($file, $read+$reserveAdditional, LOCK_EX);
-            $this->unlockFolder($file);
+            $this->unlock($file);
             return ($write===false)?false:$read;
         } else {
             return false; // unable to lock
@@ -97,16 +165,16 @@ class DocumentStoreOne {
     public function appendValue($name,$addValue,$tries=-1) {
 
         $file =$this->filename($name);
-        if ($this->lockFolder($file,$tries)) {
+        if ($this->lock($file,$tries)) {
 
             $fp=@fopen($file,'a');
             if ($fp===false) {
-                $this->unlockFolder($file);
+                $this->unlock($file);
                 return false; // file exists but i am unable to open it.
             }
             $r=@fwrite($fp,$addValue);
             @fclose($fp);
-            $this->unlockFolder($file);
+            $this->unlock($file);
             return ($r!==false);
         } else {
             return false; // unable to lock
@@ -130,13 +198,13 @@ class DocumentStoreOne {
     public function insert($id,$document,$tries=-1)
     {
         $file =$this->filename($id);
-        if ($this->lockFolder($file,$tries)) {
+        if ($this->lock($file,$tries)) {
             if (!file_exists($file)) {
                 $write = @file_put_contents($file, $document, LOCK_EX);
             } else {
                 $write=false;
             }
-            $this->unlockFolder($file);
+            $this->unlock($file);
             return ($write!==false);
         } else {
             return false;
@@ -153,13 +221,13 @@ class DocumentStoreOne {
     public function update($id,$document,$tries=-1)
     {
         $file =$this->filename($id);
-        if ($this->lockFolder($file,$tries)) {
+        if ($this->lock($file,$tries)) {
             if (file_exists($file)) {
                 $write = @file_put_contents($file, $document, LOCK_EX);
             } else {
                 $write=false;
             }
-            $this->unlockFolder($file);
+            $this->unlock($file);
             return ($write!==false);
         } else {
             return false;
@@ -176,9 +244,9 @@ class DocumentStoreOne {
     public function insertOrUpdate($id,$document,$tries=-1)
     {
         $file =$this->filename($id);
-        if ($this->lockFolder($file,$tries)) {
+        if ($this->lock($file,$tries)) {
             $write = @file_put_contents($file, $document, LOCK_EX);
-            $this->unlockFolder($file);
+            $this->unlock($file);
             return ($write!==false);
         } else {
             return false;
@@ -239,9 +307,9 @@ class DocumentStoreOne {
      */
     public function get($id,$tries=-1) {
         $file =$this->filename($id);
-        if ($this->lockFolder($file,$tries)) {
+        if ($this->lock($file,$tries)) {
             $json=@file_get_contents($file);
-            $this->unlockFolder($file);
+            $this->unlock($file);
             return $json;
         } else {
             return false;
@@ -256,7 +324,7 @@ class DocumentStoreOne {
      */
     public function ifExist($id,$tries=-1) {
         $file =$this->filename($id);
-        if ($this->lockFolder($file,$tries)) {
+        if ($this->lock($file,$tries)) {
             return file_exists($file);
         } else {
             return false;
@@ -270,9 +338,9 @@ class DocumentStoreOne {
      */
     public function delete($id,$tries=-1) {
         $file =$this->filename($id);
-        if ($this->lockFolder($file,$tries)) {
+        if ($this->lock($file,$tries)) {
             $r=@unlink($file);
-            $this->unlockFolder($file);
+            $this->unlock($file);
             return $r;
         } else {
             return false;
@@ -285,24 +353,53 @@ class DocumentStoreOne {
      * @param int $maxRetry
      * @return bool
      */
-    private function lockFolder($filepath,$maxRetry=-1){
+    private function lock($filepath, $maxRetry=-1){
         if ($this->manualLock!=null) return true; //it's already locked manually.
-        clearstatcache();
-        $maxRetry=($maxRetry==-1)?$this->defaultNumRetry:$maxRetry;
-        $lockname=$filepath.".lock";
-        $life=@filectime($lockname);
-        $try=0;
-        while (!@mkdir($lockname) && $try<$maxRetry){
-            $try++;
-            if ($life) {
-                if ((time() - $life) > $this->maxLockTime) {
-                    rmdir($lockname);
-                    $life = false;
-                }
+        $maxRetry = ($maxRetry == -1) ? $this->defaultNumRetry : $maxRetry;
+        if ($this->strategy==self::DSO_APCU) {
+            $try=0;
+            while (@apcu_add("documentstoreone." . $filepath,1, $this->maxLockTime)===false && $try<$maxRetry) {
+                $try++;
+
+                usleep($this->intervalBetweenRetry);
             }
-            usleep($this->intervalBetweenRetry);
+            return ($try<$maxRetry);
         }
-        return ($try<$maxRetry);
+        if ($this->strategy==self::DSO_MEMCACHE) {
+            $try=0;
+            while (@$this->memcache->add("documentstoreone.".$filepath,1,0, $this->maxLockTime)===false && $try<$maxRetry) {
+                $try++;
+                usleep($this->intervalBetweenRetry);
+            }
+            return ($try<$maxRetry);
+        }
+        if ($this->strategy==self::DSO_REDIS) {
+            $try=0;
+            while (@$this->redis->set("documentstoreone.".$filepath,1,['NX', 'EX' => $this->maxLockTime])!==true && $try<$maxRetry) {
+                $try++;
+                usleep($this->intervalBetweenRetry);
+            }
+            return ($try<$maxRetry);
+        }
+        if ($this->strategy==self::DSO_FOLDER) {
+            clearstatcache();
+
+            $lockname = $filepath . ".lock";
+            $life = @filectime($lockname);
+            $try = 0;
+            while (!@mkdir($lockname) && $try < $maxRetry) {
+                $try++;
+                if ($life) {
+                    if ((time() - $life) > $this->maxLockTime) {
+                        rmdir($lockname);
+                        $life = false;
+                    }
+                }
+                usleep($this->intervalBetweenRetry);
+            }
+            return ($try < $maxRetry);
+        }
+        return false;
     }
 
     /**
@@ -311,8 +408,17 @@ class DocumentStoreOne {
      * @param bool $forced
      * @return bool
      */
-    private function unlockFolder($filepath,$forced=false){
+    private function unlock($filepath, $forced=false){
         if ($this->manualLock!=null && !$forced) return true; // it's locked manually it must be unlocked manually.
+        if ($this->strategy==self::DSO_APCU) {
+            return apcu_delete("documentstoreone." . $filepath);
+        }
+        if ($this->strategy==self::DSO_MEMCACHE) {
+            return $this->memcache->delete("documentstoreone." . $filepath);
+        }
+        if ($this->strategy==self::DSO_REDIS) {
+            return ($this->redis->del("documentstoreone." . $filepath)>0);
+        }
         $unlockname= $filepath.".lock";
         return @rmdir($unlockname);
     }
