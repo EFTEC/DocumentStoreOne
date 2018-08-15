@@ -31,6 +31,7 @@ try {
 // 100 invoices x 12 months x 10 years.
 // For a smb, it's around 10 years of invoices (most smb generates less than 100 invoices per month)
 // https://blog.hubspot.com/marketing/smb-invoicing-infographic
+// A larget business moves 33k invoices per month versus a 5k invoices (medium business).
 $TOTALINVOICES=100*12*10;
 $TOTALINVOICES10=floor($TOTALINVOICES/10);
 $numInv=$flatcon->getNextSequence("seq",-1,1,1,$TOTALINVOICES); // it reserves a big chunk at the same time.

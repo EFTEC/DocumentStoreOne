@@ -157,6 +157,18 @@ $doc=$flatcon->get("1");
 
 > If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 300 that it's around 30 seconds)
 
+### public function appendValue($name,$addValue,$tries=-1)
+
+It adds a value to a document with name $name. For example, for a log file.  
+
+a) If the value doesn't exists, then it's created with $addValue. Otherwise, it will return true  
+b) If the value exists, then $addValue is added and it'll return true  
+c) Otherwise,, it will return false  
+
+```php
+$seq=$flatcon->appendValue("log",date('c')." new log");
+```
+
 ### getNextSequence($name="seq",$tries=-1,$init=1,$interval=1,$reserveAdditional=0)
 
 It reads or generates a new sequence.

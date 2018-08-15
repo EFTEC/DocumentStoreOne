@@ -52,63 +52,7 @@ class DocumentStoreOne {
         return $this->getPath()."/".$file.$this->docExt;
     }
 
-    /**
-     * @param string|string[] $Ids
-     * @param int $tries
-     * @return bool
-     */
-    public function lock($Ids, $tries=-1) {
-        if ($this->manualLock!=null) return false; // we can't lock because it's already locked. Unlock first.
-        if (is_array($Ids)) {
-            $v=-10;
-            $numItem=count($Ids);
-            for($i=0;$i<$numItem;$i++) {
-                if (!$this->lockFolder($Ids[$i], $tries)) {
-                    $v = $i-1; // it failed to lock the file.
-                    break;
-                }
-            }
-            if ($v!=-10) {
-                //something failed, rollback
-                for($i=0;$i<$v;$i++) {
-                    $this->unlockFolder($Ids[$i],true);
-                }
-                return false;
-            } else {
-                // the entire array is locked.
-                $this->manualLock=$Ids;
-                return true;
-            }
-        } else {
-            // we lock a single id.
-            if ($this->lockFolder($Ids,$tries)) {
-                $this->manualLock=array($Ids);
-                return true;
-            } else {
-                return false;
-            }
-        }
-    }
 
-    /**
-     * Manually unlock the document
-     * @return bool
-     */
-    public function unlock() {
-
-        if (is_array($this->manualLock)) {
-            $v=true;
-            var_dump($this->manualLock);
-            foreach($this->manualLock as $id) {
-                var_dump($id);
-                $v=$v && $this->unlockFolder($id,true);
-            }
-        } else {
-            $v=false; // is not locked.
-        }
-        $this->manualLock=null;
-        return $v;
-    }
 
     /**
      * It gets the next sequence. If the sequence doesn't exist, it generates a new one with 1.
@@ -143,6 +87,31 @@ class DocumentStoreOne {
         }
     }
 
+    /**
+     * It appends a value to an existing document.
+     * @param string $name Name of the sequence.
+     * @param string $addValue
+     * @param int $tries
+     * @return bool It returns false if it fails to lock the document or if it's unable to read the document. Otherwise it returns true
+     */
+    public function appendValue($name,$addValue,$tries=-1) {
+
+        $file =$this->filename($name);
+        if ($this->lockFolder($file,$tries)) {
+
+            $fp=@fopen($file,'a');
+            if ($fp===false) {
+                $this->unlockFolder($file);
+                return false; // file exists but i am unable to open it.
+            }
+            $r=@fwrite($fp,$addValue);
+            @fclose($fp);
+            $this->unlockFolder($file);
+            return ($r!==false);
+        } else {
+            return false; // unable to lock
+        }
+    }
     /**
      * It gets the current path.
      * @return string
