@@ -41,7 +41,7 @@ class DocumentStoreOne {
      * @param string $database root folder of the database
      * @param string $collection collection (subfolder) of the database. If the collection is empty then it uses the root folder.
      * @param int $strategy DocumentStoreOne::DSO_*
-     * @param string $server Used for memcache (localhost:11211) and redis
+     * @param string $server Used for DSO_MEMCACHE (localhost:11211) and DSO_REDIS (localhost:6379)
      * @throws \Exception
      */
     public function __construct($database, $collection='',$strategy=self::DSO_AUTO,$server="")
