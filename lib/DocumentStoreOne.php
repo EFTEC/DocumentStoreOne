@@ -3,7 +3,7 @@ namespace eftec\DocumentStoreOne;
 
 /**
  * Class DocumentStoreOne
- * @version 1.3 2018-08-15
+ * @version 1.4 2018-08-26
  * @author Jorge Castro Castillo jcastro@eftec.cl
  * @license LGPLv3
  */
@@ -127,7 +127,7 @@ class DocumentStoreOne {
      * You could peek a sequence with get('genseq_<name>')
      * If the sequence is corrupt then it's resetted.
      * @param string $name Name of the sequence.
-     * @param int $tries
+     * @param int $tries number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
      * @param int $init The initial value of the sequence (if it's created)
      * @param int $interval The interval between each sequence. It could be negative.
      * @param int $reserveAdditional Reserve an additional number of sequence. It's useful when you want to generates many sequences at once.
@@ -159,7 +159,7 @@ class DocumentStoreOne {
      * It appends a value to an existing document.
      * @param string $name Name of the sequence.
      * @param string $addValue
-     * @param int $tries
+     * @param int $tries number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
      * @return bool It returns false if it fails to lock the document or if it's unable to read the document. Otherwise it returns true
      */
     public function appendValue($name,$addValue,$tries=-1) {
@@ -192,7 +192,7 @@ class DocumentStoreOne {
      * Add a document.
      * @param string $id Id of the document.
      * @param string $document The document
-     * @param int $tries
+     * @param int $tries number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
      * @return bool True if the information was added, otherwise false
      */
     public function insert($id,$document,$tries=-1)
@@ -215,7 +215,7 @@ class DocumentStoreOne {
      * Update a document
      * @param string $id Id of the document.
      * @param string $document The document
-     * @param int $tries
+     * @param int $tries number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
      * @return bool True if the information was added, otherwise false
      */
     public function update($id,$document,$tries=-1)
@@ -238,7 +238,7 @@ class DocumentStoreOne {
      * Add or update a document.
      * @param string $id Id of the document.
      * @param string $document The document
-     * @param int $tries
+     * @param int $tries number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
      * @return bool True if the information was added, otherwise false
      */
     public function insertOrUpdate($id,$document,$tries=-1)
@@ -302,7 +302,7 @@ class DocumentStoreOne {
     /**
      * Get a document
      * @param string $id Id of the document.
-     * @param int $tries
+     * @param int $tries number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
      * @return string|bool True if the information was read, otherwise false.
      */
     public function get($id,$tries=-1) {
@@ -319,7 +319,7 @@ class DocumentStoreOne {
     /**
      * Return if the document exists. It doesn't check until the document is fully unlocked.
      * @param string $id Id of the document.
-     * @param int $tries
+     * @param int $tries number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
      * @return string|bool True if the information was read, otherwise false.
      */
     public function ifExist($id,$tries=-1) {
@@ -333,7 +333,7 @@ class DocumentStoreOne {
     /**
      * Delete document.
      * @param string $id Id of the document
-     * @param int $tries
+     * @param int $tries number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
      * @return bool if it's unable to unlock or the document doesn't exist.
      */
     public function delete($id,$tries=-1) {
@@ -350,8 +350,8 @@ class DocumentStoreOne {
     /**
      * Copy a document. If the destination exists, it's replaced.
      * @param string $idOrigin
-     * @param string$idDestination
-     * @param int $tries
+     * @param string $idDestination
+     * @param int $tries number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
      * @return bool true if the operation is correct, otherwise it returns false (unable to lock / unable to copy)
      */
     public function copy($idOrigin,$idDestination,$tries=-1) {
@@ -371,7 +371,30 @@ class DocumentStoreOne {
             return false;
         }
     }
-
+    /**
+     * Rename a document. If the destination exists, it's not renamed
+     * @param string $idOrigin
+     * @param string $idDestination
+     * @param int $tries number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
+     * @return bool true if the operation is correct, otherwise it returns false (unable to lock / unable to rename)
+     */
+    public function rename($idOrigin,$idDestination,$tries=-1) {
+        $fileOrigin =$this->filename($idOrigin);
+        $fileDestination =$this->filename($idDestination);
+        if ($this->lock($fileOrigin,$tries)) {
+            if ($this->lock($fileDestination,$tries)) {
+                $r=@rename($fileOrigin,$fileDestination);
+                $this->unlock($fileOrigin);
+                $this->unlock($fileDestination);
+                return $r;
+            } else {
+                $this->unlock($fileOrigin);
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
     /**
      * It locks a file
      * @param $filepath

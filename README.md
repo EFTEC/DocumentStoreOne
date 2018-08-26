@@ -244,6 +244,27 @@ $listKeys=$flatcon->select("invoice_*");
 ```
 > It includes locked documents.
 
+### copy($idorigin,$iddestination,[$tries=-1])
+
+Copy the document **$idorigin** in **$iddestination** 
+
+```php
+$bool=$flatcon->copy(20,30);
+```
+
+> If the document destination exists then its replaced
+
+### rename($idorigin,$iddestination,[$tries=-1])
+
+Rename the document **$idorigin** as **$iddestination** 
+
+```php
+$bool=$flatcon->rename(20,30);
+```
+
+
+> If the document destination exists then the operation fails.
+
 ### fixCast (util class)
 
 It converts a stdclass to a specific class. 
@@ -330,6 +351,7 @@ Since it's done on code then it's possible to create an hybrid system (relationa
 
 ## Version list
 
+- 1.4 2018-08-26 function rename
 - 1.3 2018-08-15 Added strategy of lock.
 - 1.2 2018-08-12 Small fixes.
 - 1.1 2018-08-12 Changed schema with collection.
