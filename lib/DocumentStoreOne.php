@@ -3,7 +3,7 @@ namespace eftec\DocumentStoreOne;
 
 /**
  * Class DocumentStoreOne
- * @version 1.4 2018-08-26
+ * @version 1.5 2018-10-13
  * @author Jorge Castro Castillo jcastro@eftec.cl
  * @license LGPLv3
  */
@@ -29,6 +29,9 @@ class DocumentStoreOne {
     private $memcache;
     /** @var \Redis */
     var $redis;
+
+    private $autoSerialize=false;
+
     const DSO_AUTO=0;
     const DSO_FOLDER=1;
     const DSO_APCU=2;
@@ -42,12 +45,14 @@ class DocumentStoreOne {
      * @param string $collection collection (subfolder) of the database. If the collection is empty then it uses the root folder.
      * @param int $strategy DocumentStoreOne::DSO_*
      * @param string $server Used for DSO_MEMCACHE (localhost:11211) and DSO_REDIS (localhost:6379)
+     * @param bool $autoSerialize
      * @throws \Exception
      */
-    public function __construct($database, $collection='',$strategy=self::DSO_AUTO,$server="")
+    public function __construct($database, $collection='',$strategy=self::DSO_AUTO,$server="",$autoSerialize=false)
     {
         $this->database = $database;
         $this->collection = $collection;
+        $this->autoSerialize=$autoSerialize;
 
 
         //$r=$memcache->connect(MEMCACHE_SERVER, MEMCACHE_PORT);
@@ -76,6 +81,7 @@ class DocumentStoreOne {
                     $this->strategy=self::DSO_FOLDER;
                 }
             }
+            $strategy=$this->strategy;
         } else {
             $this->strategy=$strategy;
         }
@@ -96,11 +102,15 @@ class DocumentStoreOne {
                 break;
             case self::DSO_REDIS:
                 if (!class_exists("\Redis")) throw new \Exception("Redis is not defined");
-                $this->redis=new \Redis();
-                $host=explode(':',$server);
-                $r=@$this->redis->pconnect($host[0],$host[1],30); // 30 seconds timeout
-                if (!$r) {
-                    throw new \Exception("Redis is not open");
+                if (function_exists('cache')) {
+                    $this->redis=cache();// inject using the cache function (if any).
+                } else {
+                    $this->redis=new \Redis();
+                    $host=explode(':',$server);
+                    $r=@$this->redis->pconnect($host[0],$host[1],30); // 30 seconds timeout
+                    if (!$r) {
+                        throw new \Exception("Redis is not open");
+                    }
                 }
                 break;
             default:
@@ -200,7 +210,11 @@ class DocumentStoreOne {
         $file =$this->filename($id);
         if ($this->lock($file,$tries)) {
             if (!file_exists($file)) {
-                $write = @file_put_contents($file, $document, LOCK_EX);
+                if ($this->autoSerialize) {
+                    $write = @file_put_contents($file,serialize($document), LOCK_EX);
+                } else {
+                    $write = @file_put_contents($file, $document, LOCK_EX);
+                }
             } else {
                 $write=false;
             }
@@ -223,7 +237,11 @@ class DocumentStoreOne {
         $file =$this->filename($id);
         if ($this->lock($file,$tries)) {
             if (file_exists($file)) {
-                $write = @file_put_contents($file, $document, LOCK_EX);
+                if ($this->autoSerialize) {
+                    $write = @file_put_contents($file,serialize($document), LOCK_EX);
+                } else {
+                    $write = @file_put_contents($file, $document, LOCK_EX);
+                }
             } else {
                 $write=false;
             }
@@ -245,7 +263,11 @@ class DocumentStoreOne {
     {
         $file =$this->filename($id);
         if ($this->lock($file,$tries)) {
-            $write = @file_put_contents($file, $document, LOCK_EX);
+            if ($this->autoSerialize) {
+                $write = @file_put_contents($file,serialize($document), LOCK_EX);
+            } else {
+                $write = @file_put_contents($file, $document, LOCK_EX);
+            }
             $this->unlock($file);
             return ($write!==false);
         } else {
@@ -264,13 +286,23 @@ class DocumentStoreOne {
     }
 
     /**
-     * Set the current collection
+     * Set the current collection. It also could create the collection.
      * @param $collection
+     * @param bool $createIfNotExist if true then it checks if the collection (folder) exists, if not then it's created
      * @return DocumentStoreOne
      */
-    public function collection($collection) {
+    public function collection($collection,$createIfNotExist=false) {
         $this->collection=$collection;
+        if ($createIfNotExist) {
+            if (!$this->isCollection($collection)) {
+                $this->createCollection($collection);
+            }
+        }
         return $this;
+    }
+
+    public function autoSerialize($value=true) {
+        $this->autoSerialize=$value;
     }
 
     /**
@@ -303,13 +335,14 @@ class DocumentStoreOne {
      * Get a document
      * @param string $id Id of the document.
      * @param int $tries number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
-     * @return string|bool True if the information was read, otherwise false.
+     * @return mixed True if the information was read, otherwise false.
      */
     public function get($id,$tries=-1) {
         $file =$this->filename($id);
         if ($this->lock($file,$tries)) {
             $json=@file_get_contents($file);
             $this->unlock($file);
+            if ($this->autoSerialize) return unserialize($json);
             return $json;
         } else {
             return false;

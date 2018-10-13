@@ -13,6 +13,9 @@ use eftec\DocumentStoreOne\DocumentStoreOne;
 
 include "../lib/DocumentStoreOne.php";
 include "modelinvoices/Models.php";
+echo "<h1>Map Reduce</h1>";
+echo "We have several invoices, we are mapping an invoice with a customer, so we could consult all the invoices x customer without reading all the invoices<br>";
+echo "The limit of this strategy is the size of the file and it must be open on memory<br>";
 echo "generating map reduce for invoice per customer...<br>";
 @flush();
 @ob_flush();
@@ -54,5 +57,9 @@ if ($igbinary) {
 }
 $t2=microtime(true);
 echo "store mapreduce microseconds :".($t2-$t1)." seconds.<br>";
+echo "<hr>";
+echo "<pre>";
+echo json_encode($customers,JSON_PRETTY_PRINT);
+echo "</pre>";
 
 

@@ -7,6 +7,38 @@ A document store for PHP that allows multiples concurrencies. It is a minimalist
 [![php](https://img.shields.io/badge/php-7.x-green.svg)]()
 [![Doc](https://img.shields.io/badge/docs-100%25-green.svg)]()
 
+- [DocumentStoreOne](#documentstoreone)
+  * [Key features](#key-features)
+  * [Test](#test)
+  * [Concurrency test](#concurrency-test)
+  * [Usage](#usage)
+  * [Commands](#commands)
+    + [Constructor($baseFolder,$collection,$strategy=DocumentStoreOne::DSO_AUTO,$server="",$autoSerialize=false)](#constructor--basefolder--collection--strategy-documentstoreone--dso-auto--server-----autoserialize-false-)
+    + [autoSerialize($value=true)](#autoserialize--value-true-)
+    + [isCollection($collection)](#iscollection--collection-)
+    + [collection($collection,$createIfNotExist=false)](#collection--collection--createifnotexist-false-)
+    + [createCollection($collection)](#createcollection--collection-)
+    + [insertOrUpdate($id,$document,[$tries=-1])](#insertorupdate--id--document---tries--1--)
+    + [insert($id,$document,[$tries=-1])](#insert--id--document---tries--1--)
+    + [update($id,$document,[$tries=-1])](#update--id--document---tries--1--)
+    + [get($id,[$tries=-1])](#get--id---tries--1--)
+    + [public function appendValue($name,$addValue,$tries=-1)](#public-function-appendvalue--name--addvalue--tries--1-)
+    + [getNextSequence($name="seq",$tries=-1,$init=1,$interval=1,$reserveAdditional=0)](#getnextsequence--name--seq---tries--1--init-1--interval-1--reserveadditional-0-)
+    + [ifExist($id,[$tries=-1])](#ifexist--id---tries--1--)
+    + [delete($id,[$tries=-1])](#delete--id---tries--1--)
+    + [select($mask="*")](#select--mask-----)
+    + [copy($idorigin,$iddestination,[$tries=-1])](#copy--idorigin--iddestination---tries--1--)
+    + [rename($idorigin,$iddestination,[$tries=-1])](#rename--idorigin--iddestination---tries--1--)
+    + [fixCast (util class)](#fixcast--util-class-)
+  * [DocumentStoreOne Fields](#documentstoreone-fields)
+  * [MapReduce](#mapreduce)
+  * [Limits](#limits)
+  * [Version list](#version-list)
+  * [Pending](#pending)
+
+
+
+
 ## Key features
 - Single key based.
 - Fast. However, it's not an alternative to a relational database. It's optimized to store a moderated number documents instead of millions of rows.
@@ -67,7 +99,7 @@ $flatcon->delete("somekey1");
 
 ## Commands
 
-### Constructor($baseFolder,$collection,$strategy=DocumentStoreOne::DSO_AUTO,$server="")
+### Constructor($baseFolder,$collection,$strategy=DocumentStoreOne::DSO_AUTO,$server="",$autoSerialize=false)
 
 It creates the DocumentStoreOne instance.   **$baseFolder** should be a folder, and **$collection** (a subfolder) is optional.
 
@@ -101,25 +133,43 @@ try {
 }
 ```
 
+### autoSerialize($value=true)
+
+It sets if the library will auto-serialize the values or not. By default, values are not autoserialized.
+
+```php
+    $ok=$flatcon->autoSerialize();
+```
+
+>This operation could be chained.
+
 ### isCollection($collection)
 
 Returns true if collection is valid (a subfolder).
 ```php
 $ok=$flatcon->isCollection('tmp');
 ```
-### collection($collection)
+### collection($collection,$createIfNotExist=false)
+
+* $collection is the name of the collection.
+* $createIfNotExist if true then it checks if the collection (folder) exists, if not then it's created. If true, it could impacts the performance (it checks the existence of the collection/folder), so it mustn't be used in a cycle.
 
 It sets the current collection
 ```php
 $flatcon->collection('newcollection'); // it sets a collection.
 ```
-This command could be nested.  
+
+```php
+$flatcon->collection('newcollection',true); // it sets a collection, if it doesn't exist then it's created.
+```
+
+> This command could be nested.  
 
 ```php
 $flatcon->collection('newcollection')->select(); // it sets and return a query
 ```
 
-> Note, it doesn't validate if the collection is correct.  You must use isCollection to verify if it's right.
+> Note, it doesn't validate if the collection is correct unless you are using $createIfNotExist=true.  You must use isCollection to verify if it's right.
 
 ### createCollection($collection) 
 
@@ -317,7 +367,7 @@ John purchased 3 products with the code 33.  The products 33 costs $23.3 per uni
 Question, how much every customer paid?.
 
 > It's a simple exercise, it's more suitable for a relational database (select * from purchases inner join products).
-> However, if the document is long then it's here where a document store shines.
+> However, if the document is long or complex to store in the database then it's here where a document store shines.
 
 ```php
 // 1) open the store
@@ -351,6 +401,7 @@ Since it's done on code then it's possible to create an hybrid system (relationa
 
 ## Version list
 
+- 1.5 2018-10-13 Maintenance update
 - 1.4 2018-08-26 function rename
 - 1.3 2018-08-15 Added strategy of lock.
 - 1.2 2018-08-12 Small fixes.

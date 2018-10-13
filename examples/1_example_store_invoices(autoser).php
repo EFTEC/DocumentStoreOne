@@ -12,6 +12,7 @@ use eftec\DocumentStoreOne\DocumentStoreOne;
  * @author Jorge Castro Castillo jcastro@eftec.cl
  * @license LGPLv3
  */
+echo "<h1>inserting invoices with auto serialization</h1>";
 echo "loading, please wait 1-5 minutes<br>";
 
 @flush();
@@ -23,7 +24,9 @@ include "../lib/DocumentStoreOne.php";
 include "modelinvoices/Models.php";
 $t1=microtime(true);
 try {
-    $flatcon = new DocumentStoreOne(dirname(__FILE__) . "/base", 'invoices');
+    $flatcon = new DocumentStoreOne(dirname(__FILE__) . "/base");
+    $flatcon->autoSerialize(true);
+    $flatcon->collection("invoices2",true);
 } catch (Exception $e) {
     die("Unable to create document store ".$e->getMessage());
 }
@@ -57,12 +60,7 @@ for($i=1;$i<=$TOTALINVOICES;$i++) {
         $det=new InvoiceDetail($product,rand(10,200)/10,rand(1,10));
         $inv->details[]=$det;
     }
-    if ($igbinary) {
-        $doc=igbinary_serialize($inv);
-    } else {
-        $doc=json_encode($inv);
-    }
-    $flatcon->insertOrUpdate($numInv,$doc);
+    $flatcon->insertOrUpdate($numInv,$inv);
     $numInv++;
 }
 

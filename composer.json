@@ -12,8 +12,16 @@
         }],
     "extra": {
         "branch-alias": {
-          "dev-master": "1.4-dev"
+          "dev-master": "1.5-dev"
         }
       },
-    "require": {}
+    "suggest": {
+        "ext-memcache": "If you want to use memcache for locks",
+        "ext-redis": "If you want to use redis for locks. It is not recommended becuase it's slow than folder",
+        "ext-apcu": "If you want to use redis for locks. It is not recommended",
+        "ext-igbinary": "Some examples could use it"
+    },
+  "require": {
+    "ext-json": "*"
+  }
 }
