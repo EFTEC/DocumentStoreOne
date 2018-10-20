@@ -3,7 +3,7 @@ namespace eftec\DocumentStoreOne;
 
 /**
  * Class DocumentStoreOne
- * @version 1.5 2018-10-13
+ * @version 1.6 2018-10-19
  * @author Jorge Castro Castillo jcastro@eftec.cl
  * @license LGPLv3
  */
@@ -15,8 +15,8 @@ class DocumentStoreOne {
     var $collection;
     /** @var int Maximium duration of the lock (in seconds). By default it's 2 minutes */
     var $maxLockTime=120;
-    /** @var int Default number of retries. By default it tries 300x0.1sec=30 seconds */
-    var $defaultNumRetry=300;
+    /** @var int Default number of retries. By default it tries 100x0.1sec=10 seconds */
+    var $defaultNumRetry=100;
     /** @var int Interval (in microseconds) between retries. 100000 means 0.1 seconds */
     var $intervalBetweenRetry=100000;
     /** @var string Default extension (with dot) of the document */
@@ -358,7 +358,9 @@ class DocumentStoreOne {
     public function ifExist($id,$tries=-1) {
         $file =$this->filename($id);
         if ($this->lock($file,$tries)) {
-            return file_exists($file);
+            $exist=file_exists($file);
+            $this->unlock($file);
+            return $exist;
         } else {
             return false;
         }
