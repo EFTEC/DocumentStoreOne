@@ -3,7 +3,7 @@ namespace eftec\DocumentStoreOne;
 
 /**
  * Class DocumentStoreOne
- * @version 1.7 2018-10-20
+ * @version 1.7.1 2018-10-20
  * @author Jorge Castro Castillo jcastro@eftec.cl
  * @link https://github.com/EFTEC/DocumentStoreOne
  * @license LGPLv3
@@ -440,7 +440,6 @@ class DocumentStoreOne {
      * @return bool
      */
     private function lock($filepath, $maxRetry=-1){
-        echo "trying to lock $filepath<br>";
         if ($this->manualLock!=null) return true; //it's already locked manually.
         $maxRetry = ($maxRetry == -1) ? $this->defaultNumRetry : $maxRetry;
         if ($this->strategy==self::DSO_APCU) {
