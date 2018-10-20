@@ -139,7 +139,7 @@ inserts a new document (string) in the **$id** indicated. If the document exists
 $doc=json_encode(array("a1"=>'hello',"a2"=>'world')
 $flatcon->insertOrUpdate("1",$doc));
 ```
-> If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 300 that it's around 30 seconds)
+> If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 100 tries that equivales to 10 seconds)
 
 > It's fast than insert or update.
 
@@ -153,7 +153,7 @@ $doc=json_encode(array("a1"=>'hello',"a2"=>'world')
 $flatcon->insert("1",$doc));
 ```
 
-> If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 300 that it's around 30 seconds)
+> If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 100 tries that equivales to 10 seconds)
 
 ### update($id,$document,[$tries=-1])
 
@@ -165,7 +165,7 @@ $doc=json_encode(array("a1"=>'hello',"a2"=>'world')
 $flatcon->update("1",$doc));
 ```
 
-> If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 300 that it's around 30 seconds)
+> If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 100 tries that equivales to 10 seconds)
 
 
 ### get($id,[$tries=-1])
@@ -177,7 +177,7 @@ It reads the document **$id**.  If the document doesn't exist or it's unable to 
 $doc=$flatcon->get("1");
 ```
 
-> If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 300 that it's around 30 seconds)
+> If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 100 tries that equivales to 10 seconds)
 
 ### public function appendValue($name,$addValue,$tries=-1)
 
@@ -223,7 +223,7 @@ It checks if the document **$id** exists.  It returns true if the document exist
 $found=$flatcon->ifExist("1");
 ```
 
-> If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 300 that it's around 30 seconds)
+> If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 100 tries that equivales to 10 seconds)
 
 ### delete($id,[$tries=-1])
 
@@ -233,7 +233,7 @@ It deletes the document **$id**.  If the document doesn't exist or it's unable t
 ```php
 $doc=$flatcon->delete("1");
 ```
-> If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 300 that it's around 30 seconds)
+> If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 100 tries that equivales to 10 seconds)
 
 ### select($mask="*")
 
@@ -286,15 +286,24 @@ The next fields are public and they could be changed during runtime
 |$database|string root folder of the database|
 |$collection|string Current collection (subfolder) of the database|
 |$maxLockTime=120|int Maximium duration of the lock (in seconds). By default it's 2 minutes |
-|$defaultNumRetry=300|int Default number of retries. By default it tries 300x0.1sec=30 seconds |
+|$defaultNumRetry=100|int Default number of retries. By default it tries 100x0.1sec=10 seconds |
 |$intervalBetweenRetry=100000|int Interval (in microseconds) between retries. 100000 means 0.1 seconds |
 |$docExt=".dson"|string Default extension (with dot) of the document |
+|$keyEncryption=""|string Indicates if the key is encrypted or not when it's stored (the file name). Empty means, no encryption. You could use md5,sha1,sha256,.. |
 
 Example: 
 ```php
 $ds=new DocumentStoreOne();
 $ds->maxLockTime=300;
 ```
+
+```php
+$ds=new DocumentStoreOne();
+$ds->insert('1','hello'); // it stores the document 1.dson
+$ds->keyEncryption='SHA256';
+$ds->insert('1','hello'); // it stores the document 6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b.dson
+```
+
 
 ## MapReduce
 
@@ -352,6 +361,7 @@ Since it's done on code then it's possible to create an hybrid system (relationa
 
 ## Version list
 
+- 1.7 2018-10-20 Added key encryption (optional)
 - 1.6 2018-10-19 
 - - Reduced the default time from 30 seconds to 10 seconds because usually PHP is configured to a timeout of 30 seconds.
 - - Method ifExist locks the resource and never releases. Now it releases as expected.

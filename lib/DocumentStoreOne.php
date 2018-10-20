@@ -3,7 +3,7 @@ namespace eftec\DocumentStoreOne;
 
 /**
  * Class DocumentStoreOne
- * @version 1.6 2018-10-19
+ * @version 1.7 2018-10-20
  * @author Jorge Castro Castillo jcastro@eftec.cl
  * @link https://github.com/EFTEC/DocumentStoreOne
  * @license LGPLv3
@@ -31,6 +31,9 @@ class DocumentStoreOne {
     /** @var \Redis */
     var $redis;
 
+    /** @var string Indicates if the key is encrypted or not when it's stored (the file name). Empty means, no encryption. You could use md5,sha1,sha256,.. */
+    var $keyEncryption='';
+
     private $autoSerialize=false;
 
     const DSO_AUTO=0;
@@ -47,14 +50,15 @@ class DocumentStoreOne {
      * @param int $strategy DocumentStoreOne::DSO_*
      * @param string $server Used for DSO_MEMCACHE (localhost:11211) and DSO_REDIS (localhost:6379)
      * @param bool $autoSerialize
+     * @param string $keyEncryption
      * @throws \Exception
      */
-    public function __construct($database, $collection='',$strategy=self::DSO_AUTO,$server="",$autoSerialize=false)
+    public function __construct($database, $collection='',$strategy=self::DSO_AUTO,$server="",$autoSerialize=false,$keyEncryption='')
     {
         $this->database = $database;
         $this->collection = $collection;
         $this->autoSerialize=$autoSerialize;
-
+        $this->keyEncryption=$keyEncryption;
 
         //$r=$memcache->connect(MEMCACHE_SERVER, MEMCACHE_PORT);
         $this->setStrategy($strategy,$server);
@@ -125,9 +129,7 @@ class DocumentStoreOne {
      * @return string full filename
      */
     private function filename($id) {
-
-        //$file =base64_encode($id); //it's unsable on windows because windows is not case sensitive.
-        $file =$id;
+        $file = $this->keyEncryption ? hash($this->keyEncryption, $id) : $id;
         return $this->getPath()."/".$file.$this->docExt;
     }
 
@@ -438,6 +440,7 @@ class DocumentStoreOne {
      * @return bool
      */
     private function lock($filepath, $maxRetry=-1){
+        echo "trying to lock $filepath<br>";
         if ($this->manualLock!=null) return true; //it's already locked manually.
         $maxRetry = ($maxRetry == -1) ? $this->defaultNumRetry : $maxRetry;
         if ($this->strategy==self::DSO_APCU) {
