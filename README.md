@@ -363,7 +363,7 @@ Since it's done on code then it's possible to create an hybrid system (relationa
 
 ## Version list
 
-- 1.7.2 2018-02-03 Updated composer.json 
+- 1.7.3 2018-02-03 Updated composer.json 
 - 1.7.1 2018-10-20 Removed a debug echo on lock()
 - 1.7 2018-10-20 Added key encryption (optional)
 - 1.6 2018-10-19 

@@ -7,7 +7,7 @@
     "license": "LGPL-3.0-only",
     "autoload": {
       "psr-4": {
-        "eftec\\": "lib/"
+        "eftec\\DocumentStoreOne\\": "lib/"
       }
     },
     "authors": [
@@ -17,7 +17,7 @@
         }],
     "extra": {
         "branch-alias": {
-          "dev-master": "1.7.2-dev"
+          "dev-master": "1.7.3-dev"
         }
       },
     "suggest": {
