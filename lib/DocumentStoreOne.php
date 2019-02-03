@@ -241,7 +241,7 @@ class DocumentStoreOne {
 			    break;
 		    case 'json_object':
 		    case 'json_array':
-			    return serialize($document);
+			    return json_encode($document);
 			    break;
 		    case 'none':
 			    return $document;
