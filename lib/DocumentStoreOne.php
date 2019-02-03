@@ -84,7 +84,7 @@ class DocumentStoreOne {
     public function setStrategy($strategy, $server="") {
 
         if($strategy==self::DSO_AUTO) {
-            if (!function_exists("apcu_add")) {
+            if (function_exists("apcu_add")) {
                 $this->strategy=self::DSO_APCU;
             } else {
                 if (!class_exists("\Memcache")) {
