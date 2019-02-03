@@ -1,6 +1,7 @@
 # DocumentStoreOne
 A document store for PHP that allows multiples concurrencies. It is a minimalist alternative to MongoDB or CouchDB without the overhead of installing a new service.
 
+[![Build Status](https://travis-ci.org/EFTEC/DocumentStoreOne.svg?branch=master)](https://travis-ci.org/EFTEC/DocumentStoreOne)
 [![Packagist](https://img.shields.io/packagist/v/eftec/documentstoreone.svg)](https://packagist.org/packages/eftec/documentstoreone)
 [![Total Downloads](https://poser.pugx.org/eftec/documentstoreone/downloads)](https://packagist.org/packages/eftec/documentstoreone)
 [![License](https://img.shields.io/badge/license-LGPLV3-blue.svg)]()
