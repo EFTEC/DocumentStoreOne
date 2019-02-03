@@ -5,6 +5,10 @@
     "keywords": ["php-library","php","database","file","mapreduce","bigdata"],
     "homepage": "https://github.com/EFTEC/DocumentStoreOne",
     "license": "LGPL-3.0-only",
+    "autoload": {
+    "psr-4": {
+      "eftec\\": "lib/"
+    },  
     "authors": [
         {
             "name": "Jorge Castro Castillo",
@@ -12,7 +16,7 @@
         }],
     "extra": {
         "branch-alias": {
-          "dev-master": "1.7.1-dev"
+          "dev-master": "1.7.2-dev"
         }
       },
     "suggest": {

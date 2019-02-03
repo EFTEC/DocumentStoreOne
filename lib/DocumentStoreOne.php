@@ -3,7 +3,7 @@ namespace eftec\DocumentStoreOne;
 
 /**
  * Class DocumentStoreOne
- * @version 1.7.1 2018-10-20
+ * @version 1.7.2 2019-02-03
  * @author Jorge Castro Castillo jcastro@eftec.cl
  * @link https://github.com/EFTEC/DocumentStoreOne
  * @license LGPLv3
