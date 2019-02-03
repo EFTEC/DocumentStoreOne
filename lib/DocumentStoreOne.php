@@ -370,7 +370,7 @@ class DocumentStoreOne {
             $json=@file_get_contents($file);
             $this->unlock($file);
             if ($this->autoSerialize ) {
-            	switch ($this->serializeStrategy=="") {
+            	switch ($this->serializeStrategy) {
 		            case 'php':
 			            return unserialize($json);
 			            break;
