@@ -10,6 +10,11 @@
         "eftec\\DocumentStoreOne\\": "lib/"
       }
     },
+    "autoload-dev": {
+      "psr-4": {
+        "eftec\\tests\\": "tests/"
+      }
+    },  
     "authors": [
         {
             "name": "Jorge Castro Castillo",
@@ -17,7 +22,7 @@
         }],
     "extra": {
         "branch-alias": {
-          "dev-master": "1.7.3-dev"
+          "dev-master": "1.8-dev"
         }
       },
     "suggest": {
@@ -28,5 +33,8 @@
     },
   "require": {
     "ext-json": "*"
-  }
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^5.7 || ^6.5"
+  }  
 }

@@ -3,7 +3,7 @@ namespace eftec\DocumentStoreOne;
 
 /**
  * Class DocumentStoreOne
- * @version 1.7.3 2019-02-03
+ * @version 1.8 2019-02-03
  * @author Jorge Castro Castillo jcastro@eftec.cl
  * @link https://github.com/EFTEC/DocumentStoreOne
  * @license LGPLv3
@@ -22,6 +22,13 @@ class DocumentStoreOne {
     var $intervalBetweenRetry=100000;
     /** @var string Default extension (with dot) of the document */
     var $docExt=".dson";
+    /** @var string=['php','json_object','json_array','none'][$i] */
+    var $serializeStrategy='php';
+
+	private $autoSerialize=false;
+    
+    /** @var bool if true then it will never lock the files. It is useful for a read only base */
+    var $neverLock=false;
     /** @var null|string[] Indicates if it's locked manually. By default, every operation locks the document */
     private $manualLock=null;
     /** @var int DocumentStoreOne::DSO_* */
@@ -34,7 +41,7 @@ class DocumentStoreOne {
     /** @var string Indicates if the key is encrypted or not when it's stored (the file name). Empty means, no encryption. You could use md5,sha1,sha256,.. */
     var $keyEncryption='';
 
-    private $autoSerialize=false;
+  
 
     const DSO_AUTO=0;
     const DSO_FOLDER=1;
@@ -204,7 +211,7 @@ class DocumentStoreOne {
     /**
      * Add a document.
      * @param string $id Id of the document.
-     * @param string $document The document
+     * @param string|array $document The document
      * @param int $tries number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
      * @return bool True if the information was added, otherwise false
      */
@@ -214,7 +221,7 @@ class DocumentStoreOne {
         if ($this->lock($file,$tries)) {
             if (!file_exists($file)) {
                 if ($this->autoSerialize) {
-                    $write = @file_put_contents($file,serialize($document), LOCK_EX);
+                    $write = @file_put_contents($file,$this->serialize($document), LOCK_EX);
                 } else {
                     $write = @file_put_contents($file, $document, LOCK_EX);
                 }
@@ -227,11 +234,27 @@ class DocumentStoreOne {
             return false;
         }
     }
+    private function serialize($document) {
+    	switch($this->serializeStrategy) {
+		    case 'php':
+			    return serialize($document);
+			    break;
+		    case 'json_object':
+		    case 'json_array':
+			    return serialize($document);
+			    break;
+		    case 'none':
+			    return $document;
+			    break;	
+		    default:
+		    	return $document;
+	    }
+    }
 
     /**
      * Update a document
      * @param string $id Id of the document.
-     * @param string $document The document
+     * @param string|array $document The document
      * @param int $tries number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
      * @return bool True if the information was added, otherwise false
      */
@@ -241,7 +264,7 @@ class DocumentStoreOne {
         if ($this->lock($file,$tries)) {
             if (file_exists($file)) {
                 if ($this->autoSerialize) {
-                    $write = @file_put_contents($file,serialize($document), LOCK_EX);
+                    $write = @file_put_contents($file,$this->serialize($document), LOCK_EX);
                 } else {
                     $write = @file_put_contents($file, $document, LOCK_EX);
                 }
@@ -258,7 +281,7 @@ class DocumentStoreOne {
     /**
      * Add or update a document.
      * @param string $id Id of the document.
-     * @param string $document The document
+     * @param string|array $document The document
      * @param int $tries number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
      * @return bool True if the information was added, otherwise false
      */
@@ -267,7 +290,7 @@ class DocumentStoreOne {
         $file =$this->filename($id);
         if ($this->lock($file,$tries)) {
             if ($this->autoSerialize) {
-                $write = @file_put_contents($file,serialize($document), LOCK_EX);
+                $write = @file_put_contents($file,$this->serialize($document), LOCK_EX);
             } else {
                 $write = @file_put_contents($file, $document, LOCK_EX);
             }
@@ -304,8 +327,9 @@ class DocumentStoreOne {
         return $this;
     }
 
-    public function autoSerialize($value=true) {
+    public function autoSerialize($value=true,$strategy='php') {
         $this->autoSerialize=$value;
+        $this->serializeStrategy=$strategy;
     }
 
     /**
@@ -345,7 +369,22 @@ class DocumentStoreOne {
         if ($this->lock($file,$tries)) {
             $json=@file_get_contents($file);
             $this->unlock($file);
-            if ($this->autoSerialize) return unserialize($json);
+            if ($this->autoSerialize ) {
+            	switch ($this->serializeStrategy=="") {
+		            case 'php':
+			            return unserialize($json);
+			            break;
+		            case 'json_object':
+			            return json_decode($json);
+			            break;
+		            case 'json_array':
+			            return json_decode($json,true);
+			            break;
+		            case 'none':
+			            return $json;
+			            break;
+	            }
+            } 
             return $json;
         } else {
             return false;
@@ -440,6 +479,7 @@ class DocumentStoreOne {
      * @return bool
      */
     private function lock($filepath, $maxRetry=-1){
+    	if ($this->neverLock) return true;
         if ($this->manualLock!=null) return true; //it's already locked manually.
         $maxRetry = ($maxRetry == -1) ? $this->defaultNumRetry : $maxRetry;
         if ($this->strategy==self::DSO_APCU) {
@@ -495,6 +535,7 @@ class DocumentStoreOne {
      * @return bool
      */
     private function unlock($filepath, $forced=false){
+    	if ($this->neverLock) return true;
         if ($this->manualLock!=null && !$forced) return true; // it's locked manually it must be unlocked manually.
         if ($this->strategy==self::DSO_APCU) {
             return apcu_delete("documentstoreone." . $filepath);
