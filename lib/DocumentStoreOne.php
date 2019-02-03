@@ -87,7 +87,7 @@ class DocumentStoreOne {
             if (function_exists("apcu_add")) {
                 $this->strategy=self::DSO_APCU;
             } else {
-                if (!class_exists("\Memcache")) {
+                if (class_exists("\Memcache")) {
                     $this->strategy=self::DSO_MEMCACHE;
                 } else {
                     $this->strategy=self::DSO_FOLDER;
