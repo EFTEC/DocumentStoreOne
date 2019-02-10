@@ -364,6 +364,7 @@ Since it's done on code then it's possible to create an hybrid system (relationa
 
 ## Version list
 
+- 1.9 2019-02-10 Unlock now tries to unlock. Manuallock field is not used anymore.
 - 1.8 2018-02-03 field neverLock (for fast access a read only database) also phpunit
 - 1.7.3 2018-02-03 Updated composer.json 
 - 1.7.1 2018-10-20 Removed a debug echo on lock()

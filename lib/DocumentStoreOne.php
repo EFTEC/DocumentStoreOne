@@ -3,7 +3,7 @@ namespace eftec\DocumentStoreOne;
 
 /**
  * Class DocumentStoreOne
- * @version 1.8 2019-02-03
+ * @version 1.9 2019-02-10
  * @author Jorge Castro Castillo jcastro@eftec.cl
  * @link https://github.com/EFTEC/DocumentStoreOne
  * @license LGPLv3
@@ -27,10 +27,8 @@ class DocumentStoreOne {
 
 	private $autoSerialize=false;
     
-    /** @var bool if true then it will never lock the files. It is useful for a read only base */
+    /** @var bool if true then it will never lock or unlock the document. It is useful for a read only base */
     var $neverLock=false;
-    /** @var null|string[] Indicates if it's locked manually. By default, every operation locks the document */
-    private $manualLock=null;
     /** @var int DocumentStoreOne::DSO_* */
     var $strategy=self::DSO_FOLDER;
     /** @var \Memcache */
@@ -480,7 +478,6 @@ class DocumentStoreOne {
      */
     private function lock($filepath, $maxRetry=-1){
     	if ($this->neverLock) return true;
-        if ($this->manualLock!=null) return true; //it's already locked manually.
         $maxRetry = ($maxRetry == -1) ? $this->defaultNumRetry : $maxRetry;
         if ($this->strategy==self::DSO_APCU) {
             $try=0;
@@ -530,24 +527,31 @@ class DocumentStoreOne {
 
     /**
      * Unlocks a document
-     * @param $filepath
-     * @param bool $forced
+     * @param string $filepath full file path/key of the document to unlock.
+     * @param bool $forced Use future
      * @return bool
      */
     private function unlock($filepath, $forced=false){
-    	if ($this->neverLock) return true;
-        if ($this->manualLock!=null && !$forced) return true; // it's locked manually it must be unlocked manually.
-        if ($this->strategy==self::DSO_APCU) {
-            return apcu_delete("documentstoreone." . $filepath);
-        }
-        if ($this->strategy==self::DSO_MEMCACHE) {
-            return $this->memcache->delete("documentstoreone." . $filepath);
-        }
-        if ($this->strategy==self::DSO_REDIS) {
-            return ($this->redis->del("documentstoreone." . $filepath)>0);
-        }
+    	if ($this->neverLock) return true; 
+    	switch ($this->strategy) {
+		    case self::DSO_APCU:
+			    return apcu_delete("documentstoreone." . $filepath);
+		    	break;
+		    case self::DSO_MEMCACHE:
+			    return $this->memcache->delete("documentstoreone." . $filepath);
+		    	break;
+		    case self::DSO_REDIS:
+			    return ($this->redis->del("documentstoreone." . $filepath)>0);
+			    break;
+	    }
         $unlockname= $filepath.".lock";
-        return @rmdir($unlockname);
+	    $try = 0;
+	    // retry to delete the unlockname folder. If fails then it tries it again.
+    	while(!@rmdir($unlockname) && $try < $this->defaultNumRetry) {
+    		$try++;
+		    usleep($this->intervalBetweenRetry);
+	    }
+        return ($try < $this->defaultNumRetry);
     }
 
 
