@@ -15,8 +15,9 @@ class DocumentStoreOneTest extends TestCase
 	 */
     protected $flatcon;
 
-    public function setUp()
+    public function __construct()
     {
+	    parent::__construct();
 	    $this->flatcon = new DocumentStoreOne(dirname(__FILE__) . "/base", '');
     }
 
