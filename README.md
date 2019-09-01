@@ -125,6 +125,19 @@ $flatcon->collection('newcollection')->select(); // it sets and return a query
 
 > Note, it doesn't validate if the collection is correct.  You must use isCollection to verify if it's right.
 
+### autoSerialize($value=true,$strategy='php') 
+It sets if we want to auto serialize the information and we set how it is serialized
+
+|strategy|type|
+|---|---|
+|php | it serializes using serialize() function|
+|php_array | it serializes using include()/var_export()function. The result could be cached on OpCache because the result is a php file|
+|json_object | it is serialized using json (as object)|php_array | it is serialized as a php_array|
+|json_array | it is serialized using json (as array)|php_array | it is serialized as a php_array|
+|**none** (default value) | it is not serialized. Information must be serialized/de-serialized manually|php_array | it is serialized as a php_array|
+
+
+
 ### createCollection($collection) 
 
 It creates a collection. It returns false if the operation fails; otherwise it returns true
@@ -215,6 +228,17 @@ $seq=$flatcon->getNextSequence();
 ```php
 $seq=$flatcon->getNextSequence("seq",-1,1,1,100); // if $seq=1, then it's reserved up to the 101. The next value will be 102.
 ```
+###  getSequencePHP()
+
+It returns an unique sequence (64bit integer) based on time, a random value and a serverId.
+
+> The chances of collision (a generation of the same value) is 1/4095 (per two operations executed every 0.0001 second).
+ 
+```php
+$this->nodeId=1; // if it is not set then it uses a random value each time.
+$unique=$flatcon->getSequencePHP(); 
+```
+
 
 ### ifExist($id,[$tries=-1])
 
@@ -364,6 +388,7 @@ Since it's done on code then it's possible to create an hybrid system (relationa
 
 ## Version list
 
+- 1.10 2019-08-30 Some cleaning. Added getSequencePHP() and field nodeId
 - 1.9 2019-02-10 Unlock now tries to unlock. Manuallock field is not used anymore.
 - 1.8 2018-02-03 field neverLock (for fast access a read only database) also phpunit
 - 1.7.3 2018-02-03 Updated composer.json 

@@ -13,8 +13,18 @@ try {
 
 
 echo "<br>setCollection:"; $flatcon->collection('tmp');
+$flatcon->docExt=".php";
+
+$flatcon->setStrategy('folder','');
+$flatcon->setNeverLock(true);
+$flatcon->autoSerialize(true,'php_array');
+
+
+
 echo "<hr>";
 echo "<br>insertOrUpdate:"; var_dump($flatcon->insertOrUpdate("example_1",array("a1"=>'hello',"a2"=>'world')));
+echo "<br>get:"; var_dump($flatcon->get("example_1"));
+
 
 
 echo "<br>insert:"; var_dump($flatcon->insert("example_2",json_encode(array("a1"=>'hello',"a2"=>'world'))));

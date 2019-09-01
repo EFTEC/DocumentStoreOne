@@ -5,9 +5,7 @@ use eftec\DocumentStoreOne\DocumentStoreOne;
 include "../lib/DocumentStoreOne.php";
 echo "test<br>";
 
-var_dump(hash('sha256',1));
 
-die(1);
 
 
 try {

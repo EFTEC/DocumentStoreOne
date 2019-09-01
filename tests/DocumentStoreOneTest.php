@@ -28,6 +28,14 @@ class DocumentStoreOneTest extends TestCase
         $this->assertEquals(true,$this->flatcon->insertOrUpdate("someid","dummy"),"insert or update must be true");
 
 	    $this->assertEquals("dummy",$this->flatcon->get("someid"));
+
+	    $seq1=$this->flatcon->getNextSequence("myseq");
+        $this->assertEquals($seq1+1,$this->flatcon->getNextSequence("myseq"),"sequence must be +1");
+
+
+        $s1=$this->flatcon->getSequencePHP();
+        $s2=$this->flatcon->getSequencePHP();
+        $this->assertEquals(false,$s1===$s2,"sequence must be differents");
     }
 
 
