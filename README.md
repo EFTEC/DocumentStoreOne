@@ -387,7 +387,11 @@ Since it's done on code then it's possible to create an hybrid system (relationa
 - The limit of documents that a collection could hold is based on the document system used. NTFS allows 2 millions of documents per collection.  
 
 ## Version list
-
+- 1.11 2019-10-23
+    * new method setObjectIndex() It sets the default index field for insertObject() and insertOrUpdateObject()
+    * new method insertObject() 
+    * new method insertOrUpdateObject()
+    * method select() now could returns a list of indexes of a list of documents
 - 1.10 2019-08-30 Some cleaning. Added getSequencePHP() and field nodeId
 - 1.9 2019-02-10 Unlock now tries to unlock. Manuallock field is not used anymore.
 - 1.8 2018-02-03 field neverLock (for fast access a read only database) also phpunit
