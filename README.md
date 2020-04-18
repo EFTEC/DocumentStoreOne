@@ -1,11 +1,13 @@
 # DocumentStoreOne
-A document store for PHP that allows multiples concurrencies. It is a minimalist alternative to MongoDB or CouchDB without the overhead of installing a new service.
+A document store for PHP that allows multiples concurrencies. It is a minimalist alternative to MongoDB or CouchDB without the overhead of installing a new service.  
+
+It also works a a small footprint database.
 
 [![Build Status](https://travis-ci.org/EFTEC/DocumentStoreOne.svg?branch=master)](https://travis-ci.org/EFTEC/DocumentStoreOne)
 [![Packagist](https://img.shields.io/packagist/v/eftec/documentstoreone.svg)](https://packagist.org/packages/eftec/documentstoreone)
 [![Total Downloads](https://poser.pugx.org/eftec/documentstoreone/downloads)](https://packagist.org/packages/eftec/documentstoreone)
 [![License](https://img.shields.io/badge/license-LGPLV3-blue.svg)]()
-[![Maintenance](https://img.shields.io/maintenance/yes/2019.svg)]()
+[![Maintenance](https://img.shields.io/maintenance/yes/2020.svg)]()
 [![composer](https://img.shields.io/badge/composer-%3E1.8-blue.svg)]()
 [![php](https://img.shields.io/badge/php->5.4-green.svg)]()
 [![php](https://img.shields.io/badge/php-7.x-green.svg)]()
@@ -67,6 +69,16 @@ $flatcon->insertOrUpdate("somekey1",json_encode(array("a1"=>'hello',"a2"=>'world
 $doc=$flatcon->get("somekey1");
 $listKeys=$flatcon->select();
 $flatcon->delete("somekey1");
+```
+
+```php
+include "lib/DocumentStoreOne.php";
+use eftec\DocumentStoreOne\DocumentStoreOne;
+$doc=new DocumentStoreOne(__DIR__."/base","task",'folder');
+$doc->serializeStrategy='php'; // it sets the strategy of serialization to php
+$doc->autoSerialize(true); // autoserialize
+
+$flatcon->insertOrUpdate("somekey1",array("a1"=>'hello',"a2"=>'world')); 
 ```
 
 ## Commands
@@ -152,8 +164,8 @@ inserts a new document (string) in the **$id** indicated. If the document exists
 **$tries** indicates the number of tries. The default value is -1 (default number of attempts).  
 
 ```php
-$doc=json_encode(array("a1"=>'hello',"a2"=>'world')
-$flatcon->insertOrUpdate("1",$doc));
+$doc=json_encode(array("a1"=>'hello',"a2"=>'world'));
+$flatcon->insertOrUpdate("1",$doc);
 ```
 > If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 100 tries that equivales to 10 seconds)
 
@@ -165,8 +177,8 @@ Inserts a new document (string) in the **$id** indicated. If the document exists
 **$tries** indicates the number of tries. The default value is -1 (default number of attempts).  
 
 ```php
-$doc=json_encode(array("a1"=>'hello',"a2"=>'world')
-$flatcon->insert("1",$doc));
+$doc=json_encode(array("a1"=>'hello',"a2"=>'world'));
+$flatcon->insert("1",$doc);
 ```
 
 > If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 100 tries that equivales to 10 seconds)
@@ -177,20 +189,36 @@ Update a document (string) in the **$id** indicated. If the document doesn't exi
 **$tries** indicates the number of tries. The default value is -1 (default number of attempts).  
 
 ```php
-$doc=json_encode(array("a1"=>'hello',"a2"=>'world')
-$flatcon->update("1",$doc));
+$doc=json_encode(array("a1"=>'hello',"a2"=>'world'));
+$flatcon->update("1",$doc);
 ```
 
 > If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 100 tries that equivales to 10 seconds)
 
 
-### get($id,[$tries=-1])
+### get($id,[$tries=-1],$default=false)
 
 It reads the document **$id**.  If the document doesn't exist or it's unable to read it, then it returns false.  
 **$tries** indicates the number of tries. The default value is -1 (default number of attempts).  
 
 ```php
-$doc=$flatcon->get("1");
+$doc=$flatcon->get("1"); // the default value is false
+
+$doc=$flatcon->get("1",-1,'empty');
+```
+
+> If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 100 tries that equivales to 10 seconds)
+
+
+### getFiltered($id,[$tries=-1],$default=false,$condition=[],$reindex=true)
+
+It reads the document **$id** filtered.  If the document doesn't exist or it's unable to read it, then it returns false.  
+**$tries** indicates the number of tries. The default value is -1 (default number of attempts).  
+
+```php
+// data in rows [['id'=>1,'cat'=>'vip'],['id'=>2,'cat'=>'vip'],['id'=>3,'cat'=>'normal']];
+$data=$this->getFiltered('rows',-1,false,['cat'=>'normal']); // [['id'=>3,'cat'=>'normal']]
+$data=$this->getFiltered('rows',-1,false,['type'=>'busy'],false); // [2=>['id'=>3,'cat'=>'normal']]
 ```
 
 > If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 100 tries that equivales to 10 seconds)
@@ -199,9 +227,9 @@ $doc=$flatcon->get("1");
 
 It adds a value to a document with name $name. For example, for a log file.  
 
-a) If the value doesn't exists, then it's created with $addValue. Otherwise, it will return true  
-b) If the value exists, then $addValue is added and it'll return true  
-c) Otherwise,, it will return false  
+a) If the value doesn't exist, then it's created with $addValue. Otherwise, it will return true  
+b) If the value exists, then $addValue is added, and it'll return true  
+c) Otherwise, it will return false  
 
 ```php
 $seq=$flatcon->appendValue("log",date('c')." new log");
@@ -299,7 +327,8 @@ It converts a stdclass to a specific class.
 
 ```php
 $inv=new Invoice();
-DocumentStoreOne::fixCast($inv,$invTmp); //$invTmp is a stdClass();
+$invTmp=$doc->get('someid'); //$invTmp is a stdClass();
+DocumentStoreOne::fixCast($inv,$invTmp); 
 ```
 
 > It doesn't work with members that are array of objects.  The array is kept as stdclass.
@@ -387,16 +416,20 @@ Since it's done on code then it's possible to create an hybrid system (relationa
 - The limit of documents that a collection could hold is based on the document system used. NTFS allows 2 millions of documents per collection.  
 
 ## Version list
+- 1.12 2020-04-18
+    * method get() has a default value
+    * method unlock() removed the argument $forced
+    * new method getFiltered()
 - 1.11 2019-10-23
     * new method setObjectIndex() It sets the default index field for insertObject() and insertOrUpdateObject()
     * new method insertObject() 
     * new method insertOrUpdateObject()
-    * method select() now could returns a list of indexes of a list of documents
+    * method select() now could return a list of indexes of a list of documents
 - 1.10 2019-08-30 Some cleaning. Added getSequencePHP() and field nodeId
 - 1.9 2019-02-10 Unlock now tries to unlock. Manuallock field is not used anymore.
 - 1.8 2018-02-03 field neverLock (for fast access a read only database) also phpunit
 - 1.7.3 2018-02-03 Updated composer.json 
-- 1.7.1 2018-10-20 Removed a debug echo on lock()
+- 1.7.1 2018-10-20 Removed an incorrect echo on lock()
 - 1.7 2018-10-20 Added key encryption (optional)
 - 1.6 2018-10-19 
 - - Reduced the default time from 30 seconds to 10 seconds because usually PHP is configured to a timeout of 30 seconds.

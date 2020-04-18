@@ -2,6 +2,7 @@
     "name": "eftec/documentstoreone",
     "description": "A flat document store for PHP that allows multiples concurrencies.",
     "type": "library",
+    "version": "1.12",
     "keywords": ["php-library","php","database","file","mapreduce","bigdata"],
     "homepage": "https://github.com/EFTEC/DocumentStoreOne",
     "license": "LGPL-3.0-only",
@@ -19,12 +20,7 @@
         {
             "name": "Jorge Castro Castillo",
             "email": "jcastro@eftec.cl"
-        }],
-    "extra": {
-        "branch-alias": {
-          "dev-master": "1.11-dev"
-        }
-      },
+        }],   
     "suggest": {
         "ext-memcache": "If you want to use memcache for locks",
         "ext-redis": "If you want to use redis for locks. It is not recommended becuase it's slow than folder",
@@ -36,5 +32,6 @@
   },
   "require-dev": {
     "phpunit/phpunit": "^5.7 || ^8.0"
-  }  
+  },
+  
 }
