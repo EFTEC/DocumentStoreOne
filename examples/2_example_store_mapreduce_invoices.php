@@ -24,7 +24,7 @@ echo "generating map reduce for invoice per customer...<br>";
 $t1=microtime(true);
 
 try {
-    $flatcon = new DocumentStoreOne(dirname(__FILE__) . "/base", 'invoices');
+    $flatcon = new DocumentStoreOne(__DIR__ . "/base", 'invoices');
 } catch (Exception $e) {
     die("Unable to create document store");
 }

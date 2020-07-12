@@ -13,7 +13,7 @@ include "modelinvoices/Models.php";
 $t1=microtime(true);
 
 try {
-    $flatcon = new DocumentStoreOne(dirname(__FILE__) . "/base", 'invoices2');
+    $flatcon = new DocumentStoreOne(__DIR__ . "/base", 'invoices2');
     $flatcon->autoSerialize(true);
 } catch (Exception $e) {
     die("Unable to create document store");

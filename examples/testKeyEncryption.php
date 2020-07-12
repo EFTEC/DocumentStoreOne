@@ -9,7 +9,7 @@ echo "test<br>";
 
 
 try {
-    $flatcon = new DocumentStoreOne(dirname(__FILE__) . "/base", '');
+    $flatcon = new DocumentStoreOne(__DIR__ . "/base", '');
     $flatcon->keyEncryption='sha256';
 
 } catch (Exception $e) {

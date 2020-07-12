@@ -5,7 +5,7 @@ use eftec\DocumentStoreOne\DocumentStoreOne;
 include "../lib/DocumentStoreOne.php";
 echo "test<br>";
 try {
-    $flatcon = new DocumentStoreOne(dirname(__FILE__) . "/base", 'tmp',DocumentStoreOne::DSO_FOLDER);
+    $flatcon = new DocumentStoreOne(__DIR__ . "/base", 'tmp',DocumentStoreOne::DSO_FOLDER);
 } catch (Exception $e) {
     die("Unable to create document store");
 }

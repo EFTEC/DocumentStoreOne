@@ -17,8 +17,8 @@ include "../lib/DocumentStoreOne.php";
 include "modelinvoices/Models.php";
 $delta=0;
 try {
-    //$flatcon = new DocumentStoreOne(dirname(__FILE__) . "/base", 'tmp',DocumentStoreOne::DSO_MEMCACHE,"localhost:11211");
-    $flatcon = new DocumentStoreOne(dirname(__FILE__) . "/base", 'tmp',DocumentStoreOne::DSO_REDIS,"localhost:6379");
+    //$flatcon = new DocumentStoreOne(__DIR__ . "/base", 'tmp',DocumentStoreOne::DSO_MEMCACHE,"localhost:11211");
+    $flatcon = new DocumentStoreOne(__DIR__ . "/base", 'tmp',DocumentStoreOne::DSO_REDIS,"localhost:6379");
     $flatcon->maxLockTime=3;
 } catch (Exception $e) {
     die("Unable to create document store ".$e->getMessage());

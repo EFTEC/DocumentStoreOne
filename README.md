@@ -61,7 +61,7 @@ A test with 100 concurrent test (write and read), 10 times.
 include "lib/DocumentStoreOne.php";
 use eftec\DocumentStoreOne\DocumentStoreOne;
 try {
-    $flatcon = new DocumentStoreOne(dirname(__FILE__) . "/base", 'tmp');
+    $flatcon = new DocumentStoreOne(__DIR__ . "/base", 'tmp');
 } catch (Exception $e) {
     die("Unable to create document store. Please, check the folder");
 }
@@ -101,7 +101,7 @@ Benchmark how much time (in seconds) it takes to add 100 inserts.
 use eftec\DocumentStoreOne\DocumentStoreOne;
 include "lib/DocumentStoreOne.php";
 try {
-    $flatcon = new DocumentStoreOne(dirname(__FILE__) . "/base", 'tmp');
+    $flatcon = new DocumentStoreOne(__DIR__ . "/base", 'tmp');
 } catch (Exception $e) {
     die("Unable to create document store.".$e->getMessage());
 }
@@ -416,6 +416,8 @@ Since it's done on code then it's possible to create an hybrid system (relationa
 - The limit of documents that a collection could hold is based on the document system used. NTFS allows 2 millions of documents per collection.  
 
 ## Version list
+- 1.13 2020-07-12   
+    * method appendValue() now serializes information and works with most method but php_array.    
 - 1.12 2020-04-18
     * method get() has a default value
     * method unlock() removed the argument $forced

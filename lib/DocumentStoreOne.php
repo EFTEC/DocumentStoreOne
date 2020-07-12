@@ -1,4 +1,10 @@
-<?php /** @noinspection PhpUnused */
+<?php
+/** @noinspection TypeUnsafeComparisonInspection
+ * @noinspection ClassConstantCanBeUsedInspection
+ * @noinspection UnknownInspectionInspection
+ * @noinspection MkdirRaceConditionInspection
+ * @noinspection PhpUnused
+ */
 
 namespace eftec\DocumentStoreOne;
 
@@ -7,11 +13,12 @@ use Exception;
 use Memcache;
 use Redis;
 use ReflectionObject;
+use RuntimeException;
 
 /**
  * Class DocumentStoreOne
  *
- * @version 1.12 2020-04-18
+ * @version 1.13 2020-07-12
  * @author  Jorge Castro Castillo jcastro@eftec.cl
  * @link    https://github.com/EFTEC/DocumentStoreOne
  * @license LGPLv3
@@ -24,34 +31,41 @@ class DocumentStoreOne
     const DSO_APCU = 'apcu';
     const DSO_MEMCACHE = 'memcached';
     const DSO_REDIS = 'redis';
+    /**
+     * @var string It is used to append a value without updating the whole file.
+     *             This file must be enough complex to avoid collisions.
+     *             But it is also utf-8 compatible.
+     *             10 x 8 bits = 80 bits (1,208,925,819,614,629,174,706,176 chances of colision)
+     */
+    public $separatorAppend="~§¶¤¶¤¶§~\n"; 
     /** @var string root folder of the database */
-    var $database;
+    public $database;
     /** @var string collection (subfolder) of the database */
-    var $collection;
+    public $collection;
     /** @var int Maximium duration of the lock (in seconds). By default it's 2 minutes */
-    var $maxLockTime = 120;
+    public $maxLockTime = 120;
     /** @var int Default number of retries. By default it tries 100x0.1sec=10 seconds */
-    var $defaultNumRetry = 100;
+    public $defaultNumRetry = 100;
     /** @var int Interval (in microseconds) between retries. 100000 means 0.1 seconds */
-    var $intervalBetweenRetry = 100000;
+    public $intervalBetweenRetry = 100000;
     /** @var string Default extension (with dot) of the document */
-    var $docExt = ".dson";
+    public $docExt = ".dson";
     /** @var string=['php','php_array','json_object','json_array','none'][$i] */
-    var $serializeStrategy = 'php';
+    public $serializeStrategy = 'php';
     /** @var bool if true then it will never lock or unlock the document. It is useful for a read only base */
-    var $neverLock = false;
+    public $neverLock = false;
     /** @var int DocumentStoreOne::DSO_* */
-    var $strategy = self::DSO_FOLDER;
+    public $strategy = self::DSO_FOLDER;
     /** @var Redis */
-    var $redis;
+    public $redis;
     /** @var string=['','md5','sha1','sha256','sha512'][$i] Indicates if the key is encrypted or not when it's stored (the file name). Empty means, no encryption. You could use md5,sha1,sha256,.. */
-    var $keyEncryption = '';
+    public $keyEncryption = '';
     /**
      * @var int nodeId It is the identifier of the node.<br>
      * It must be between 0..1023<br>
      * If the value is -1, then it randomizes it's value each call.
      */
-    var $nodeId = 1;
+    public $nodeId = 1;
     private $autoSerialize;
     /** @var Memcache */
     private $memcache;
@@ -74,8 +88,8 @@ class DocumentStoreOne
      * @param bool $autoSerialize If true then the value (inserted) is auto serialized
      * @param string $keyEncryption =['','md5','sha1','sha256','sha512'][$i] it uses to encrypt the name of the keys (filename)
      *
-     * @throws Exception
-     * @example $flatcon=new DocumentStoreOne(dirname(__FILE__)."/base",'collectionFolder');
+     * @throws RuntimeException
+     * @example $flatcon=new DocumentStoreOne(__DIR__."/base",'collectionFolder');
      */
     public function __construct(
         $database, $collection = '', $strategy = 'auto', $server = "", $autoSerialize = false, $keyEncryption = ''
@@ -89,7 +103,7 @@ class DocumentStoreOne
         $this->setStrategy($strategy, $server);
 
         if (!is_dir($this->getPath())) {
-            throw new Exception("Tsk Tsk, the folder is incorrect or I'm not unable to read  it: " . $this->getPath() .
+            throw new RuntimeException("Tsk Tsk, the folder is incorrect or I'm not unable to read  it: " . $this->getPath() .
                                 '. You could create the collection with createCollection()');
         }
     }
@@ -97,21 +111,19 @@ class DocumentStoreOne
     /**
      * It sets the strategy to lock and unlock the folders
      *
-     * @param string $strategy =['auto','folder','apcu','memcached','redis'][$i]
+     * @param string|int $strategy =['auto','folder','apcu','memcached','redis'][$i]
      * @param string $server
      *
-     * @throws Exception
+     * @throws RuntimeException
      */
     public function setStrategy($strategy, $server = "") {
-        if ($strategy == self::DSO_AUTO) {
-            if (function_exists("apcu_add")) {
+        if ($strategy === self::DSO_AUTO) {
+            if (function_exists('apcu_add')) {
                 $this->strategy = self::DSO_APCU;
+            } elseif (class_exists('\Memcache')) {
+                $this->strategy = self::DSO_MEMCACHE;
             } else {
-                if (class_exists("\Memcache")) {
-                    $this->strategy = self::DSO_MEMCACHE;
-                } else {
-                    $this->strategy = self::DSO_FOLDER;
-                }
+                $this->strategy = self::DSO_FOLDER;
             }
             $strategy = $this->strategy;
         } else {
@@ -122,23 +134,23 @@ class DocumentStoreOne
                 break;
             case self::DSO_APCU:
                 if (!function_exists("apcu_add")) {
-                    throw new Exception("APCU is not defined");
+                    throw new RuntimeException("APCU is not defined");
                 }
                 break;
             case self::DSO_MEMCACHE:
                 if (!class_exists("\Memcache")) {
-                    throw new Exception("Memcache is not defined");
+                    throw new RuntimeException("Memcache is not defined");
                 }
                 $this->memcache = new Memcache();
                 $host = explode(':', $server);
                 $r = @$this->memcache->pconnect($host[0], $host[1]);
                 if (!$r) {
-                    throw new Exception("Memcache is not open");
+                    throw new RuntimeException("Memcache is not open");
                 }
                 break;
             case self::DSO_REDIS:
                 if (!class_exists("\Redis")) {
-                    throw new Exception("Redis is not defined");
+                    throw new RuntimeException("Redis is not defined");
                 }
                 if (function_exists('cache')) {
                     $this->redis = cache();// inject using the cache function (if any).
@@ -147,12 +159,12 @@ class DocumentStoreOne
                     $host = explode(':', $server);
                     $r = @$this->redis->pconnect($host[0], $host[1], 30); // 30 seconds timeout
                     if (!$r) {
-                        throw new Exception("Redis is not open");
+                        throw new RuntimeException("Redis is not open");
                     }
                 }
                 break;
             default:
-                throw new Exception("Strategy not defined");
+                throw new RuntimeException("Strategy not defined");
         }
     }
 
@@ -190,7 +202,7 @@ class DocumentStoreOne
             foreach ($sourceProperties as $sourceProperty) {
                 $name = $sourceProperty->getName();
                 if (is_object(@$destination->{$name})) {
-                    if (get_class(@$destination->{$name}) == "DateTime") {
+                    if (get_class(@$destination->{$name}) === "DateTime") {
                         // source->name is a stdclass, not a DateTime, so we could read the value with the field date
                         try {
                             $destination->{$name} = new DateTime($source->$name->date);
@@ -217,30 +229,35 @@ class DocumentStoreOne
     }
 
     /**
-     * It appends a value to an existing document. The value is not serialized.
+     * It appends a value to an existing document. It is not compatible with the strategy json_array
      *
      * @param string $id id of the document.
-     * @param string $addValue This value is not auto serialized.
+     * @param mixed $addValue This value could be serialized.
      * @param int $tries number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
      *
      * @return bool It returns false if it fails to lock the document or if it's unable to read the document. Otherwise it returns true
+     * @throws RuntimeException             
      */
     public function appendValue($id, $addValue, $tries = -1) {
 
+        if($this->serializeStrategy==='php_array') {
+            throw new RuntimeException('appendValue doesnt work with php_array');
+        }
         $file = $this->filename($id);
         if ($this->lock($file, $tries)) {
-            $fp = @fopen($file, 'a');
+            $fp = @fopen($file, 'ab');
             if ($fp === false) {
                 $this->unlock($file);
                 return false; // file exists but i am unable to open it.
             }
+            $addValue=$this->serialize($addValue);
+            $addValue=$this->separatorAppend.$addValue;
             $r = @fwrite($fp, $addValue);
             @fclose($fp);
             $this->unlock($file);
             return ($r !== false);
-        } else {
-            return false; // unable to lock
         }
+        return false; // unable to lock
     }
 
     /**
@@ -267,8 +284,8 @@ class DocumentStoreOne
         if ($this->neverLock) {
             return true;
         }
-        $maxRetry = ($maxRetry == -1) ? $this->defaultNumRetry : $maxRetry;
-        if ($this->strategy == self::DSO_APCU) {
+        $maxRetry = ($maxRetry === -1) ? $this->defaultNumRetry : $maxRetry;
+        if ($this->strategy === self::DSO_APCU) {
             $try = 0;
             while (@apcu_add("documentstoreone." . $filepath, 1, $this->maxLockTime) === false && $try < $maxRetry) {
                 $try++;
@@ -277,7 +294,7 @@ class DocumentStoreOne
             }
             return ($try < $maxRetry);
         }
-        if ($this->strategy == self::DSO_MEMCACHE) {
+        if ($this->strategy === self::DSO_MEMCACHE) {
             $try = 0;
             while (@$this->memcache->add("documentstoreone." . $filepath, 1, 0, $this->maxLockTime) === false &&
                 $try < $maxRetry) {
@@ -286,7 +303,7 @@ class DocumentStoreOne
             }
             return ($try < $maxRetry);
         }
-        if ($this->strategy == self::DSO_REDIS) {
+        if ($this->strategy === self::DSO_REDIS) {
             $try = 0;
             while (@$this->redis->set("documentstoreone." . $filepath, 1, ['NX', 'EX' => $this->maxLockTime]) !==
                 true && $try < $maxRetry) {
@@ -295,7 +312,7 @@ class DocumentStoreOne
             }
             return ($try < $maxRetry);
         }
-        if ($this->strategy == self::DSO_FOLDER) {
+        if ($this->strategy === self::DSO_FOLDER) {
             clearstatcache();
 
             $lockname = $filepath . ".lock";
@@ -303,11 +320,9 @@ class DocumentStoreOne
             $try = 0;
             while (!@mkdir($lockname) && $try < $maxRetry) {
                 $try++;
-                if ($life) {
-                    if ((time() - $life) > $this->maxLockTime) {
-                        rmdir($lockname);
-                        $life = false;
-                    }
+                if ($life && (time() - $life) > $this->maxLockTime) {
+                    rmdir($lockname);
+                    $life = false;
                 }
                 usleep($this->intervalBetweenRetry);
             }
@@ -436,7 +451,7 @@ class DocumentStoreOne
         $timestamp = (double)round($ms * 1000);
         $rand = (fmod($ms, 1) * 1000000) % 4096; // 4096= 2^12 It is the millionth of seconds
         if ($this->nodeId === -1) {
-            $number = rand(0, 1023); // a 10bit number.
+            $number = mt_rand(0, 1023); // a 10bit number.
             $calc = (($timestamp - 1459440000000) << 22) + ($number << 12) + $rand;
         } else {
             $calc = (($timestamp - 1459440000000) << 22) + ($this->nodeId << 12) + $rand;
@@ -476,9 +491,9 @@ class DocumentStoreOne
             $write = @file_put_contents($file, $read + $reserveAdditional, LOCK_EX);
             $this->unlock($file);
             return ($write === false) ? false : $read;
-        } else {
-            return false; // unable to lock
         }
+
+        return false; // unable to lock
     }
 
     /**
@@ -504,15 +519,41 @@ class DocumentStoreOne
             }
             $this->unlock($file);
             return ($write !== false);
-        } else {
-            return false;
+        }
+
+        return false;
+    }
+    private function deserialize($document) {
+        switch ($this->serializeStrategy) {
+            // php_array should be included.
+            //case 'php_array':
+            //    return self::serialize_php_array($document);
+            case 'php':
+                return unserialize($document);
+                break;
+            case 'json_object':
+                return json_decode($document,false);
+                break;
+            case 'json_array':
+                return json_decode($document,true);
+                break;
+            case 'none':
+                return $document;
+                break;
+            default:
+                return $document;
         }
     }
 
+    /**
+     * @param $document
+     *
+     * @return string
+     */
     private function serialize($document) {
         switch ($this->serializeStrategy) {
             case 'php_array':
-                return DocumentStoreOne::serialize_php_array($document);
+                return self::serialize_php_array($document);
             case 'php':
                 return serialize($document);
                 break;
@@ -551,9 +592,9 @@ class DocumentStoreOne
             }
             $this->unlock($file);
             return ($write !== false);
-        } else {
-            return false;
         }
+
+        return false;
     }
 
     /**
@@ -579,9 +620,9 @@ class DocumentStoreOne
             }
             $this->unlock($file);
             return ($write !== false);
-        } else {
-            return false;
         }
+
+        return false;
     }
 
     /**
@@ -594,10 +635,8 @@ class DocumentStoreOne
      */
     public function collection($collection, $createIfNotExist = false) {
         $this->collection = $collection;
-        if ($createIfNotExist) {
-            if (!$this->isCollection($collection)) {
-                $this->createCollection($collection);
-            }
+        if ($createIfNotExist && !$this->isCollection($collection)) {
+            $this->createCollection($collection);
         }
         return $this;
     }
@@ -659,18 +698,18 @@ class DocumentStoreOne
      */
     public function select($mask = "*", $returnOnlyIndex = true) {
         $list = glob($this->database . "/" . $this->collection . "/" . $mask . $this->docExt);
-        foreach ($list as &$fileId) {
-            $fileId = basename($fileId, $this->docExt);
+        foreach ($list as $key=>$fileId) {
+            $list[$key] = basename($fileId, $this->docExt);
         }
         if ($returnOnlyIndex) {
             return $list;
-        } else {
-            $listDoc = [];
-            foreach ($list as $fileId) {
-                $listDoc[] = $this->get($fileId);
-            }
-            return $listDoc;
         }
+
+        $listDoc = [];
+        foreach ($list as $fileId) {
+            $listDoc[] = $this->get($fileId);
+        }
+        return $listDoc;
     }
 
     /**
@@ -689,32 +728,29 @@ class DocumentStoreOne
     public function get($id, $tries = -1, $default = false) {
         $file = $this->filename($id);
         if ($this->lock($file, $tries)) {
-            if ($this->serializeStrategy == 'php_array') {
+            if ($this->serializeStrategy === 'php_array') {
                 $json = @include $file;
             } else {
                 $json = @file_get_contents($file);
                 $this->unlock($file);
-                if ($this->autoSerialize) {
-                    switch ($this->serializeStrategy) {
-                        case 'php':
-                            $json=unserialize($json);
-                            break;
-                        case 'json_object':
-                            $json=json_decode($json);
-                            break;
-                        case 'json_array':
-                            $json=json_decode($json, true);
-                            break;
-                        default:
-                        case 'none':
-                            break;
+                if(strpos($json,$this->separatorAppend)===false) {
+                    if ($this->autoSerialize) {
+                        $json = $this->deserialize($json);
+                    }
+                } else {
+                    $arr=explode($this->separatorAppend, $json);
+                    if(count($arr)>0 && $arr[0]==='') {
+                        unset($arr[0]);
+                    }
+                    $json=[];
+                    foreach($arr as $item) {
+                        $json[]=$this->deserialize($item);
                     }
                 }
             }
             return ($json===false)? $default : $json;
-        } else {
-            return $default;
         }
+        return $default;
     }
 
     /**
@@ -743,11 +779,9 @@ class DocumentStoreOne
                         $fail=true;
                         break;
                     }
-                } else {
-                    if(!isset($v[$k2]) || $v[$k2]!=$v2) {
-                        $fail=true;
-                        break;
-                    }
+                } elseif(!isset($v[$k2]) || $v[$k2]!=$v2) {
+                    $fail=true;
+                    break;
                 }
             }
             if(!$fail) {
@@ -776,9 +810,9 @@ class DocumentStoreOne
             $exist = file_exists($file);
             $this->unlock($file);
             return $exist;
-        } else {
-            return false;
         }
+
+        return false;
     }
 
     /**
@@ -795,9 +829,9 @@ class DocumentStoreOne
             $r = @unlink($file);
             $this->unlock($file);
             return $r;
-        } else {
-            return false;
         }
+
+        return false;
     }
 
     /**
@@ -818,13 +852,13 @@ class DocumentStoreOne
                 $this->unlock($fileOrigin);
                 $this->unlock($fileDestination);
                 return $r;
-            } else {
-                $this->unlock($fileOrigin);
-                return false;
             }
-        } else {
+
+            $this->unlock($fileOrigin);
             return false;
         }
+
+        return false;
     }
 
     /**
@@ -846,13 +880,13 @@ class DocumentStoreOne
                 $this->unlock($fileOrigin);
                 $this->unlock($fileDestination);
                 return $r;
-            } else {
-                $this->unlock($fileOrigin);
-                return false;
             }
-        } else {
+
+            $this->unlock($fileOrigin);
             return false;
         }
+
+        return false;
     }
 
 }

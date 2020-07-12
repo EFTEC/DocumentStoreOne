@@ -4,7 +4,6 @@ namespace eftec\tests;
 
 
 use eftec\DocumentStoreOne\DocumentStoreOne;
-use Exception;
 use PHPUnit\Framework\TestCase;
 
 
@@ -18,7 +17,7 @@ class DocumentStoreOneTest extends TestCase
     public function __construct()
     {
 	    parent::__construct();
-	    $this->flatcon = new DocumentStoreOne(dirname(__FILE__) . "/base", '');
+	    $this->flatcon = new DocumentStoreOne(__DIR__ . "/base", '');
     }
 
  

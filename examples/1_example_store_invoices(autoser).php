@@ -24,7 +24,7 @@ include "../lib/DocumentStoreOne.php";
 include "modelinvoices/Models.php";
 $t1=microtime(true);
 try {
-    $flatcon = new DocumentStoreOne(dirname(__FILE__) . "/base");
+    $flatcon = new DocumentStoreOne(__DIR__ . "/base");
     $flatcon->autoSerialize(true);
     $flatcon->collection("invoices2",true);
 } catch (Exception $e) {
