@@ -18,7 +18,7 @@ use RuntimeException;
 /**
  * Class DocumentStoreOne
  *
- * @version 1.14 2020-07-12
+ * @version 1.15 2020-09-13
  * @author  Jorge Castro Castillo jcastro@eftec.cl
  * @link    https://github.com/EFTEC/DocumentStoreOne
  * @license LGPLv3
@@ -33,11 +33,11 @@ class DocumentStoreOne
     const DSO_REDIS = 'redis';
     /**
      * @var string It is used to append a value without updating the whole file.
-     *             This file must be enough complex to avoid collisions.
-     *             But it is also utf-8 compatible.
+     *             This value must be enough complex to avoid collisions.
+     *             But it is also must be utf-8 compatible.
      *             10 x 8 bits = 80 bits (1,208,925,819,614,629,174,706,176 chances of colision)
      */
-    public $separatorAppend="~§¶¤¶¤¶§~\n"; 
+    public $separatorAppend = "~§¶¤¶¤¶§~\n";
     /** @var string root folder of the database */
     public $database;
     /** @var string collection (subfolder) of the database */
@@ -81,18 +81,23 @@ class DocumentStoreOne
      * $obj=new DocumentStoreOne(__DIR__."/base",'collectionFolder');
      * </pre>
      *
-     * @param string $database root folder of the database
-     * @param string $collection collection (subfolder) of the database. If the collection is empty then it uses the root folder.
-     * @param string $strategy =['auto','folder','apcu','memcached','redis'][$i] The strategy is only used to lock/unlock purposes.
-     * @param string $server Used for 'memcached' (localhost:11211) and 'redis' (localhost:6379)
-     * @param bool $autoSerialize If true then the value (inserted) is auto serialized
+     * @param string $database      root folder of the database
+     * @param string $collection    collection (subfolder) of the database. If the collection is empty then it uses the root folder.
+     * @param string $strategy      =['auto','folder','apcu','memcached','redis'][$i] The strategy is only used to lock/unlock purposes.
+     * @param string $server        Used for 'memcached' (localhost:11211) and 'redis' (localhost:6379)
+     * @param bool   $autoSerialize If true then the value (inserted) is auto serialized
      * @param string $keyEncryption =['','md5','sha1','sha256','sha512'][$i] it uses to encrypt the name of the keys (filename)
      *
      * @throws RuntimeException
      * @example $flatcon=new DocumentStoreOne(__DIR__."/base",'collectionFolder');
      */
     public function __construct(
-        $database, $collection = '', $strategy = 'auto', $server = "", $autoSerialize = false, $keyEncryption = ''
+        $database,
+        $collection = '',
+        $strategy = 'auto',
+        $server = "",
+        $autoSerialize = false,
+        $keyEncryption = ''
     ) {
         $this->database = $database;
         $this->collection = $collection;
@@ -103,8 +108,9 @@ class DocumentStoreOne
         $this->setStrategy($strategy, $server);
 
         if (!is_dir($this->getPath())) {
-            throw new RuntimeException("Tsk Tsk, the folder is incorrect or I'm not unable to read  it: " . $this->getPath() .
-                                '. You could create the collection with createCollection()');
+            throw new RuntimeException("Tsk Tsk, the folder is incorrect or I'm not unable to read  it: "
+                . $this->getPath() .
+                '. You could create the collection with createCollection()');
         }
     }
 
@@ -112,11 +118,12 @@ class DocumentStoreOne
      * It sets the strategy to lock and unlock the folders
      *
      * @param string|int $strategy =['auto','folder','apcu','memcached','redis'][$i]
-     * @param string $server
+     * @param string     $server
      *
      * @throws RuntimeException
      */
-    public function setStrategy($strategy, $server = "") {
+    public function setStrategy($strategy, $server = "")
+    {
         if ($strategy === self::DSO_AUTO) {
             if (function_exists('apcu_add')) {
                 $this->strategy = self::DSO_APCU;
@@ -173,7 +180,8 @@ class DocumentStoreOne
      *
      * @return string
      */
-    private function getPath() {
+    private function getPath()
+    {
         return $this->database . "/" . $this->collection;
     }
 
@@ -182,11 +190,12 @@ class DocumentStoreOne
      * Usage utilCache::fixCast($objectRightButEmpty,$objectBadCast);
      *
      * @param object|array $destination Object may be empty with the right cast.
-     * @param object|array $source Object with the wrong cast.
+     * @param object|array $source      Object with the wrong cast.
      *
      * @return void
      */
-    public static function fixCast(&$destination, $source) {
+    public static function fixCast(&$destination, $source)
+    {
         if (is_array($source)) {
             $getClass = get_class($destination[0]);
             $array = array();
@@ -224,38 +233,78 @@ class DocumentStoreOne
      *
      * @param bool $neverLock if its true the the register is never locked. It is fast but it's not concurrency-safe
      */
-    public function setNeverLock($neverLock = true) {
+    public function setNeverLock($neverLock = true)
+    {
         $this->neverLock = $neverLock;
     }
 
     /**
-     * It appends a value to an existing document. It is not compatible with the strategy json_array
+     * It appends a value to an existing document. It creates an array of values if it doesn't exists.<br>
+     * <b>Example:</b>
+     * <pre>
+     * $this->appendvalue('20',[1,2,3]); // document "20" = [[1,2,3]]
+     * $this->appendvalue('20',[3,4,5]); // document "20" = [[1,2,3],[3,4,5]]
+     * </pre>
+     * 
      *
-     * @param string $id id of the document.
-     * @param mixed $addValue This value could be serialized.
-     * @param int $tries number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
+     * @param string $id       id of the document.
+     * @param mixed  $addValue This value could be serialized.
+     * @param int    $tries    number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
      *
      * @return bool It returns false if it fails to lock the document or if it's unable to read the document. Otherwise it returns true
-     * @throws RuntimeException             
+     * @throws RuntimeException
      */
-    public function appendValue($id, $addValue, $tries = -1) {
+    public function appendValue($id, $addValue, $tries = -1)
+    {
 
-        if($this->serializeStrategy==='php_array') {
+        /*if ($this->serializeStrategy === 'php_array') {
             throw new RuntimeException('appendValue doesnt work with php_array');
-        }
+        }*/
         $file = $this->filename($id);
         if ($this->lock($file, $tries)) {
-            $fp = @fopen($file, 'ab');
-            if ($fp === false) {
-                $this->unlock($file);
-                return false; // file exists but i am unable to open it.
+            switch ($this->serializeStrategy) {
+                case 'json_array':
+                case 'json_object':
+                case 'php_array':
+                    if($this->ifExist($id,null)) {
+                        $fp = @fopen($file, 'rb+');
+                    } else {
+                        $this->unlock($file);
+                        return $this->insert($id,[$addValue],$tries);
+                    }
+                    if ($fp === false) {
+                        $this->unlock($file);
+                        return false; // file exists but i am unable to open it.
+                    }
+                    if ($this->serializeStrategy==='php_array') {
+                        fseek($fp, -4, SEEK_END);
+                        $addValue = $this->serialize($addValue,true);
+                        $r = @fwrite($fp,','.$addValue.");\n "); //note: ");\n " it must be exactly 4 characters.
+                    } else {
+                        fseek($fp, -1, SEEK_END);
+                        $addValue = $this->serialize($addValue,true);
+                        $r = @fwrite($fp,','.$addValue.']');    
+                    }
+                    
+                    @fclose($fp);
+                    $this->unlock($file);
+                    return ($r !== false);
+                
+                   
+                default:
+                    $fp = @fopen($file, 'ab');
+                    if ($fp === false) {
+                        $this->unlock($file);
+                        return false; // file exists but i am unable to open it.
+                    }
+                    $addValue = $this->serialize($addValue);
+                    $addValue = $this->separatorAppend . $addValue;
+                    $r = @fwrite($fp, $addValue);
+                    @fclose($fp);
+                    $this->unlock($file);
+                    return ($r !== false);
             }
-            $addValue=$this->serialize($addValue);
-            $addValue=$this->separatorAppend.$addValue;
-            $r = @fwrite($fp, $addValue);
-            @fclose($fp);
-            $this->unlock($file);
-            return ($r !== false);
+
         }
         return false; // unable to lock
     }
@@ -267,7 +316,8 @@ class DocumentStoreOne
      *
      * @return string full filename
      */
-    private function filename($id) {
+    private function filename($id)
+    {
         $file = $this->keyEncryption ? hash($this->keyEncryption, $id) : $id;
         return $this->getPath() . "/" . $file . $this->docExt;
     }
@@ -280,7 +330,8 @@ class DocumentStoreOne
      *
      * @return bool
      */
-    private function lock($filepath, $maxRetry = -1) {
+    private function lock($filepath, $maxRetry = -1)
+    {
         if ($this->neverLock) {
             return true;
         }
@@ -289,15 +340,14 @@ class DocumentStoreOne
             $try = 0;
             while (@apcu_add("documentstoreone." . $filepath, 1, $this->maxLockTime) === false && $try < $maxRetry) {
                 $try++;
-
                 usleep($this->intervalBetweenRetry);
             }
             return ($try < $maxRetry);
         }
         if ($this->strategy === self::DSO_MEMCACHE) {
             $try = 0;
-            while (@$this->memcache->add("documentstoreone." . $filepath, 1, 0, $this->maxLockTime) === false &&
-                $try < $maxRetry) {
+            while (@$this->memcache->add("documentstoreone." . $filepath, 1, 0, $this->maxLockTime) === false
+                && $try < $maxRetry) {
                 $try++;
                 usleep($this->intervalBetweenRetry);
             }
@@ -306,7 +356,8 @@ class DocumentStoreOne
         if ($this->strategy === self::DSO_REDIS) {
             $try = 0;
             while (@$this->redis->set("documentstoreone." . $filepath, 1, ['NX', 'EX' => $this->maxLockTime]) !==
-                true && $try < $maxRetry) {
+                true
+                && $try < $maxRetry) {
                 $try++;
                 usleep($this->intervalBetweenRetry);
             }
@@ -335,22 +386,21 @@ class DocumentStoreOne
      * Unlocks a document
      *
      * @param string $filepath full file path/key of the document to unlock.
+     *
      * @return bool
      */
-    private function unlock($filepath) {
+    private function unlock($filepath)
+    {
         if ($this->neverLock) {
             return true;
         }
         switch ($this->strategy) {
             case self::DSO_APCU:
                 return apcu_delete("documentstoreone." . $filepath);
-                break;
             case self::DSO_MEMCACHE:
                 return $this->memcache->delete("documentstoreone." . $filepath);
-                break;
             case self::DSO_REDIS:
                 return ($this->redis->del("documentstoreone." . $filepath) > 0);
-                break;
         }
         $unlockname = $filepath . ".lock";
         $try = 0;
@@ -363,11 +413,44 @@ class DocumentStoreOne
     }
 
     /**
+     * @param $document
+     *
+     * @return string
+     */
+    private function serialize($document,$special=false)
+    {
+        switch ($this->serializeStrategy) {
+            case 'php_array':
+                return self::serialize_php_array($document,$special);
+            case 'php':
+                return serialize($document);
+            case 'json_object':
+            case 'json_array':
+                return json_encode($document);
+            default:
+                // also for none
+                return $document;
+        }
+    }
+
+    private static function serialize_php_array($document,$special=false)
+    {
+        if($special) {
+            // for append
+            return var_export($document, true);
+        } else {
+            return "<?php /** @generated */\nreturn " . var_export($document, true) . ';';    
+        }
+        
+    }
+
+    /**
      * It sets the default object field used for index.
      *
      * @param string $indexField
      */
-    public function setObjectIndex($indexField) {
+    public function setObjectIndex($indexField)
+    {
         $this->objectIndex = $indexField;
     }
 
@@ -377,8 +460,8 @@ class DocumentStoreOne
      * $obj=['id'=>1,'name'=>'john'];<br>
      * $doc->insertOrUpdateObject($obj,'id');<br>
      *
-     * @param array|object $object The object (or associative array) to store
-     * @param null|string $indexField =['sequencephp','nextsequence'][$i]<br>
+     * @param array|object $object     The object (or associative array) to store
+     * @param null|string  $indexField =['sequencephp','nextsequence'][$i]<br>
      *                                 if null then it uses the default index field defined by setObjectIndex()<br>
      *                                 if sequencephp then it uses snowflake for generate a new sequence<br>
      *                                 if nextsequence then it uses a document sequence<br>
@@ -386,25 +469,27 @@ class DocumentStoreOne
      * @return string the index value
      * @see \eftec\DocumentStoreOne\DocumentStoreOne::setObjectIndex
      */
-    public function insertOrUpdateObject($object, $indexField = null) {
+    public function insertOrUpdateObject($object, $indexField = null)
+    {
         return $this->insertObject($object, $indexField, 'insertorupdate');
     }
 
     /**
      * It inserts an associative array or an object into the document store
      *
-     * @param array|object $object The object to store
-     * @param null|string $indexField =['sequencephp','nextsequence'][$i]<br>
+     * @param array|object $object     The object to store
+     * @param null|string  $indexField =['sequencephp','nextsequence'][$i]<br>
      *                                 if null then it uses the default index field defined by setObjectIndex()<br>
      *                                 if sequencephp then it uses snowflake for generate a new sequence<br>
      *                                 if nextsequence then it uses a document sequence<br>
      *
-     * @param string $operation =['insert','insertorupdate'][$i]
+     * @param string       $operation  =['insert','insertorupdate'][$i]
      *
      * @return string the index value
      * @see \eftec\DocumentStoreOne\DocumentStoreOne::setObjectIndex
      */
-    public function insertObject($object, $indexField = null, $operation = 'insert') {
+    public function insertObject($object, $indexField = null, $operation = 'insert')
+    {
         if ($indexField === null) {
             $indexField = $this->objectIndex;
         }
@@ -445,7 +530,8 @@ class DocumentStoreOne
      *
      * @return float (it returns a 64bit integer).
      */
-    public function getSequencePHP() {
+    public function getSequencePHP()
+    {
         $ms = microtime(true); // we use this number as a random number generator (we use the decimals)
         //$ms=1000;
         $timestamp = (double)round($ms * 1000);
@@ -465,15 +551,16 @@ class DocumentStoreOne
      * You could peek a sequence with get('genseq_*name*')<br>
      * If the sequence is corrupt then it's resetted.<br>
      *
-     * @param string $name Name of the sequence.
-     * @param int $tries number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
-     * @param int $init The initial value of the sequence (if it's created)
-     * @param int $interval The interval between each sequence. It could be negative.
-     * @param int $reserveAdditional Reserve an additional number of sequence. It's useful when you want to generates many sequences at once.
+     * @param string $name              Name of the sequence.
+     * @param int    $tries             number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
+     * @param int    $init              The initial value of the sequence (if it's created)
+     * @param int    $interval          The interval between each sequence. It could be negative.
+     * @param int    $reserveAdditional Reserve an additional number of sequence. It's useful when you want to generates many sequences at once.
      *
      * @return bool|int It returns false if it fails to lock the sequence or if it's unable to read thr sequence. Otherwise it returns the sequence
      */
-    public function getNextSequence($name = "seq", $tries = -1, $init = 1, $interval = 1, $reserveAdditional = 0) {
+    public function getNextSequence($name = "seq", $tries = -1, $init = 1, $interval = 1, $reserveAdditional = 0)
+    {
         $id = "genseq_" . $name;
         $file = $this->filename($id) . ".seq";
         if ($this->lock($file, $tries)) {
@@ -499,13 +586,14 @@ class DocumentStoreOne
     /**
      * Add a document.
      *
-     * @param string $id Id of the document.
+     * @param string       $id       Id of the document.
      * @param string|array $document The document
-     * @param int $tries number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
+     * @param int          $tries    number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
      *
      * @return bool True if the information was added, otherwise false
      */
-    public function insert($id, $document, $tries = -1) {
+    public function insert($id, $document, $tries = -1)
+    {
         $file = $this->filename($id);
         if ($this->lock($file, $tries)) {
             if (!file_exists($file)) {
@@ -523,66 +611,18 @@ class DocumentStoreOne
 
         return false;
     }
-    private function deserialize($document) {
-        switch ($this->serializeStrategy) {
-            // php_array should be included.
-            //case 'php_array':
-            //    return self::serialize_php_array($document);
-            case 'php':
-                return unserialize($document);
-                break;
-            case 'json_object':
-                return json_decode($document,false);
-                break;
-            case 'json_array':
-                return json_decode($document,true);
-                break;
-            case 'none':
-                return $document;
-                break;
-            default:
-                return $document;
-        }
-    }
-
-    /**
-     * @param $document
-     *
-     * @return string
-     */
-    private function serialize($document) {
-        switch ($this->serializeStrategy) {
-            case 'php_array':
-                return self::serialize_php_array($document);
-            case 'php':
-                return serialize($document);
-                break;
-            case 'json_object':
-            case 'json_array':
-                return json_encode($document);
-                break;
-            case 'none':
-                return $document;
-                break;
-            default:
-                return $document;
-        }
-    }
-
-    private static function serialize_php_array($document) {
-        return "<?php /** @generated */\nreturn " . var_export($document, true) . ';';
-    }
 
     /**
      * Add or update a document.
      *
-     * @param string $id Id of the document.
+     * @param string       $id       Id of the document.
      * @param string|array $document The document
-     * @param int $tries number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
+     * @param int          $tries    number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
      *
      * @return bool True if the information was added, otherwise false
      */
-    public function insertOrUpdate($id, $document, $tries = -1) {
+    public function insertOrUpdate($id, $document, $tries = -1)
+    {
         $file = $this->filename($id);
         if ($this->lock($file, $tries)) {
             if ($this->autoSerialize) {
@@ -600,13 +640,14 @@ class DocumentStoreOne
     /**
      * Update a document
      *
-     * @param string $id Id of the document.
+     * @param string       $id       Id of the document.
      * @param string|array $document The document
-     * @param int $tries number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
+     * @param int          $tries    number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
      *
      * @return bool True if the information was added, otherwise false
      */
-    public function update($id, $document, $tries = -1) {
+    public function update($id, $document, $tries = -1)
+    {
         $file = $this->filename($id);
         if ($this->lock($file, $tries)) {
             if (file_exists($file)) {
@@ -633,7 +674,8 @@ class DocumentStoreOne
      *
      * @return DocumentStoreOne
      */
-    public function collection($collection, $createIfNotExist = false) {
+    public function collection($collection, $createIfNotExist = false)
+    {
         $this->collection = $collection;
         if ($createIfNotExist && !$this->isCollection($collection)) {
             $this->createCollection($collection);
@@ -648,7 +690,8 @@ class DocumentStoreOne
      *
      * @return bool It returns false if it's not a collection (a valid folder)
      */
-    public function isCollection($collection) {
+    public function isCollection($collection)
+    {
         $this->collection = $collection;
         return is_dir($this->getPath());
     }
@@ -660,7 +703,8 @@ class DocumentStoreOne
      *
      * @return bool true if the operation is right, false if it fails.
      */
-    public function createCollection($collection) {
+    public function createCollection($collection)
+    {
         $oldCollection = $this->collection;
         $this->collection = $collection;
         $r = @mkdir($this->getPath());
@@ -677,10 +721,11 @@ class DocumentStoreOne
      *      none = it is not serialized. Information must be serialized/de-serialized manually
      *      php_array = it is serialized as a php_array
      *
-     * @param bool $value
+     * @param bool   $value
      * @param string $strategy =['php','php_array','json_object','json_array','none'][$i]
      */
-    public function autoSerialize($value = true, $strategy = 'php') {
+    public function autoSerialize($value = true, $strategy = 'php')
+    {
         $this->autoSerialize = $value;
         $this->serializeStrategy = $strategy;
     }
@@ -690,15 +735,16 @@ class DocumentStoreOne
      *
      * @param string $mask see http://php.net/manual/en/function.glob.php
      *
-     * @param bool $returnOnlyIndex
+     * @param bool   $returnOnlyIndex
      *                     If false then it returns each document.
      *                     If returns (default) then it return indexes.
      *
      * @return array|false
      */
-    public function select($mask = "*", $returnOnlyIndex = true) {
+    public function select($mask = "*", $returnOnlyIndex = true)
+    {
         $list = glob($this->database . "/" . $this->collection . "/" . $mask . $this->docExt);
-        foreach ($list as $key=>$fileId) {
+        foreach ($list as $key => $fileId) {
             $list[$key] = basename($fileId, $this->docExt);
         }
         if ($returnOnlyIndex) {
@@ -720,37 +766,58 @@ class DocumentStoreOne
      * $data=$this->get('rows',-1,"not null"); // it returns a value or "not null" if not found
      * </pre>
      *
-     * @param string $id Id of the document.
-     * @param int $tries number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
-     * @param mixed $default Default value (if the value is not found)
+     * @param string $id      Id of the document.
+     * @param int    $tries   number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
+     * @param mixed  $default Default value (if the value is not found)
+     *
      * @return mixed The object if the information was read, otherwise false (or default value).
      */
-    public function get($id, $tries = -1, $default = false) {
+    public function get($id, $tries = -1, $default = false)
+    {
         $file = $this->filename($id);
         if ($this->lock($file, $tries)) {
             if ($this->serializeStrategy === 'php_array') {
                 $json = @include $file;
+                $this->unlock($file);
             } else {
                 $json = @file_get_contents($file);
                 $this->unlock($file);
-                if(strpos($json,$this->separatorAppend)===false) {
+                if (strpos($json, $this->separatorAppend) === false) {
                     if ($this->autoSerialize) {
                         $json = $this->deserialize($json);
                     }
                 } else {
-                    $arr=explode($this->separatorAppend, $json);
-                    if(count($arr)>0 && $arr[0]==='') {
+                    $arr = explode($this->separatorAppend, $json);
+                    if (count($arr) > 0 && $arr[0] === '') {
                         unset($arr[0]);
                     }
-                    $json=[];
-                    foreach($arr as $item) {
-                        $json[]=$this->deserialize($item);
+                    $json = [];
+                    foreach ($arr as $item) {
+                        $json[] = $this->deserialize($item);
                     }
                 }
             }
-            return ($json===false)? $default : $json;
+            return ($json === false) ? $default : $json;
         }
         return $default;
+    }
+
+    private function deserialize($document)
+    {
+        switch ($this->serializeStrategy) {
+            // php_array should be included.
+            //case 'php_array':
+            //    return self::serialize_php_array($document);
+            case 'php':
+                return unserialize($document);
+            case 'json_object':
+                return json_decode($document, false);
+            case 'json_array':
+                return json_decode($document, true);
+            default:
+                // also for none
+                return $document;
+        }
     }
 
     /**
@@ -760,32 +827,34 @@ class DocumentStoreOne
      * $data=$this->getFiltered('rows',-1,false,['type'=>'busy']); // it returns values [0=>...,1=>...]
      * $data=$this->getFiltered('rows',-1,false,['type'=>'busy'],false); // it returns values [2=>...,4=>..]
      * </pre>
-     * 
-     * @param string $id Id of the document.
-     * @param int $tries number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
-     * @param mixed $default default value (if the value is not found)
-     * @param array $condition An associative array with the conditions.
-     * @param bool $reindex If true then the result is reindexed (starting from zero).
+     *
+     * @param string $id        Id of the document.
+     * @param int    $tries     number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
+     * @param mixed  $default   default value (if the value is not found)
+     * @param array  $condition An associative array with the conditions.
+     * @param bool   $reindex   If true then the result is reindexed (starting from zero).
+     *
      * @return array
      */
-    public function getFiltered($id, $tries = -1, $default = false,$condition=[],$reindex=true) {
-        $rows=$this->get($id,$tries,$default);
-        $result=[];
-        foreach($rows as $k=>$v) {
-            $fail=false;
-            foreach($condition as $k2=>$v2) {
-                if(is_object($v)) {
-                    if(!isset($v->{$k2}) || $v->{$k2}!=$v2) {
-                        $fail=true;
+    public function getFiltered($id, $tries = -1, $default = false, $condition = [], $reindex = true)
+    {
+        $rows = $this->get($id, $tries, $default);
+        $result = [];
+        foreach ($rows as $k => $v) {
+            $fail = false;
+            foreach ($condition as $k2 => $v2) {
+                if (is_object($v)) {
+                    if (!isset($v->{$k2}) || $v->{$k2} != $v2) {
+                        $fail = true;
                         break;
                     }
-                } elseif(!isset($v[$k2]) || $v[$k2]!=$v2) {
-                    $fail=true;
+                } elseif (!isset($v[$k2]) || $v[$k2] != $v2) {
+                    $fail = true;
                     break;
                 }
             }
-            if(!$fail) {
-                if($reindex) {
+            if (!$fail) {
+                if ($reindex) {
                     $result[] = $rows[$k];
                 } else {
                     $result[$k] = $rows[$k];
@@ -793,23 +862,30 @@ class DocumentStoreOne
             }
         }
         return $result;
-        
+
     }
 
     /**
-     * Return if the document exists. It doesn't check until the document is fully unlocked.
+     * Return if the document exists. It doesn't check until the document is fully unlocked unless $tries=null
      *
-     * @param string $id Id of the document.
-     * @param int $tries number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
+     * @param string   $id    Id of the document.
+     * @param int|null $tries number of tries.<br>
+     *                        The default value is -1 (it uses the default value $defaultNumRetry)<br>
+     *                        If $tries=null then it never check the lock.
      *
      * @return string|bool True if the information was read, otherwise false.
      */
-    public function ifExist($id, $tries = -1) {
+    public function ifExist($id, $tries = -1)
+    {
         $file = $this->filename($id);
-        if ($this->lock($file, $tries)) {
-            $exist = file_exists($file);
-            $this->unlock($file);
-            return $exist;
+        if ($tries!==null) {
+            if ($this->lock($file, $tries)) {
+                $exist = file_exists($file);
+                $this->unlock($file);
+                return $exist;
+            }
+        } else {
+            return file_exists($file);
         }
 
         return false;
@@ -818,19 +894,20 @@ class DocumentStoreOne
     /**
      * Delete a document.
      *
-     * @param string $id Id of the document
-     * @param int $tries number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
+     * @param string $id    Id of the document
+     * @param int    $tries number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
      *
      * @return bool if it's unable to unlock or the document doesn't exist.
      */
-    public function delete($id, $tries = -1) {
+    public function delete($id, $tries = -1)
+    {
         $file = $this->filename($id);
         if ($this->lock($file, $tries)) {
             $r = @unlink($file);
             $this->unlock($file);
             return $r;
         }
-
+        
         return false;
     }
 
@@ -839,11 +916,12 @@ class DocumentStoreOne
      *
      * @param string $idOrigin
      * @param string $idDestination
-     * @param int $tries number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
+     * @param int    $tries number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
      *
      * @return bool true if the operation is correct, otherwise it returns false (unable to lock / unable to copy)
      */
-    public function copy($idOrigin, $idDestination, $tries = -1) {
+    public function copy($idOrigin, $idDestination, $tries = -1)
+    {
         $fileOrigin = $this->filename($idOrigin);
         $fileDestination = $this->filename($idDestination);
         if ($this->lock($fileOrigin, $tries)) {
@@ -866,12 +944,13 @@ class DocumentStoreOne
      *
      * @param string $idOrigin
      * @param string $idDestination
-     * @param int $tries number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
+     * @param int    $tries number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
      *
      * @return bool true if the operation is correct, otherwise it returns false
      *              (unable to lock / unable to rename)
      */
-    public function rename($idOrigin, $idDestination, $tries = -1) {
+    public function rename($idOrigin, $idDestination, $tries = -1)
+    {
         $fileOrigin = $this->filename($idOrigin);
         $fileDestination = $this->filename($idDestination);
         if ($this->lock($fileOrigin, $tries)) {

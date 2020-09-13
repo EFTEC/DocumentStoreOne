@@ -413,10 +413,17 @@ Since it's done on code then it's possible to create an hybrid system (relationa
 
 ## Limits
 - Keys should be of the type A-a,0-9. In windows, keys are not case sensitive. 
-- The limit of documents that a collection could hold is based on the document system used. NTFS allows 2 millions of documents per collection.  
+- The limit of documents that a collection could hold is based on the document system used. NTFS allows 2 million
+ of documents per collection.  
 
 ## Version list
-- 1.14 20208-09-13
+
+- 1.15 2020-09-13
+    * method get() now unlocks a document correctly (using method php_array)     
+    * method appendValue() is more efficient with json_object,json_array and it works with php_array.   
+    * method appendValue() now generates an array of values.
+
+- 1.14 2020-09-13
     * Fixed composer.json. However, the previous composer.json poisoned installations so it removed all the previous
      version from packagist. 
     * Maybe you should delete composer.lock and the folder vendor\efted\documentstoreone and runs composer update.     
