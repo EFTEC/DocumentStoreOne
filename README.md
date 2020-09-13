@@ -418,13 +418,12 @@ Since it's done on code then it's possible to create an hybrid system (relationa
 ## Version list
 - 1.14 20208-09-13
     * Fixed composer.json. However, the previous composer.json poisoned installations so it removed all the previous
-     version from packagist.   
+     version from packagist. 
+    * Maybe you should delete composer.lock and the folder vendor\efted\documentstoreone and runs composer update.     
      
 >   [RuntimeException]
 >   Could not load package eftec/documentstoreone in http://repo.packagist.org: [UnexpectedValueException] Could not parse version constraint ^5.6.*: Invalid version string "^5.6.*"          
-     
-     * Maybe you should delete composer.lock and the folder vendor\efted\documentstoreone and runs composer update.
-     
+              
      
 - 1.13 2020-07-12   
     * method appendValue() now serializes information and works with most method but php_array.    
