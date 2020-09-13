@@ -2,7 +2,7 @@
     "name": "eftec/documentstoreone",
     "description": "A flat document store for PHP that allows multiples concurrencies.",
     "type": "library",
-    "version": "1.13",
+    "version": "1.14",
     "keywords": ["php-library","php","database","file","mapreduce","bigdata"],
     "homepage": "https://github.com/EFTEC/DocumentStoreOne",
     "license": "LGPL-3.0-only",
@@ -28,7 +28,7 @@
         "ext-igbinary": "Some examples could use it"
     },
   "require": {
-    "php": "^5.6.*",
+    "php": ">=5.6",
     "ext-json": "*"
   },
   "require-dev": {

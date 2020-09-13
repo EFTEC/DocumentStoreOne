@@ -18,7 +18,7 @@ use RuntimeException;
 /**
  * Class DocumentStoreOne
  *
- * @version 1.13 2020-07-12
+ * @version 1.14 2020-07-12
  * @author  Jorge Castro Castillo jcastro@eftec.cl
  * @link    https://github.com/EFTEC/DocumentStoreOne
  * @license LGPLv3
