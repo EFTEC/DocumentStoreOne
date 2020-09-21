@@ -418,6 +418,8 @@ Since it's done on code then it's possible to create an hybrid system (relationa
 
 ## Version list
 
+- 1.16.1 2020-09-20
+    * getTimeStamp() throws an exception when the file doesn't exist. Now it returns false.   
 - 1.16 2020-09-20
     * new method getTimeStamp()   
 - 1.15 2020-09-13

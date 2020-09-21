@@ -18,7 +18,7 @@ use RuntimeException;
 /**
  * Class DocumentStoreOne
  *
- * @version 1.16 2020-09-20
+ * @version 1.16.1 2020-09-20
  * @author  Jorge Castro Castillo jcastro@eftec.cl
  * @link    https://github.com/EFTEC/DocumentStoreOne
  * @license LGPLv3
@@ -245,7 +245,7 @@ class DocumentStoreOne
      * $this->appendvalue('20',[1,2,3]); // document "20" = [[1,2,3]]
      * $this->appendvalue('20',[3,4,5]); // document "20" = [[1,2,3],[3,4,5]]
      * </pre>
-     * 
+     *
      *
      * @param string $id       id of the document.
      * @param mixed  $addValue This value could be serialized.
@@ -266,31 +266,30 @@ class DocumentStoreOne
                 case 'json_array':
                 case 'json_object':
                 case 'php_array':
-                    if($this->ifExist($id,null)) {
+                    if ($this->ifExist($id, null)) {
                         $fp = @fopen($file, 'rb+');
                     } else {
                         $this->unlock($file);
-                        return $this->insert($id,[$addValue],$tries);
+                        return $this->insert($id, [$addValue], $tries);
                     }
                     if ($fp === false) {
                         $this->unlock($file);
                         return false; // file exists but i am unable to open it.
                     }
-                    if ($this->serializeStrategy==='php_array') {
+                    if ($this->serializeStrategy === 'php_array') {
                         fseek($fp, -4, SEEK_END);
-                        $addValue = $this->serialize($addValue,true);
-                        $r = @fwrite($fp,','.$addValue.");\n "); //note: ");\n " it must be exactly 4 characters.
+                        $addValue = $this->serialize($addValue, true);
+                        $r = @fwrite($fp, ',' . $addValue . ");\n "); //note: ");\n " it must be exactly 4 characters.
                     } else {
                         fseek($fp, -1, SEEK_END);
-                        $addValue = $this->serialize($addValue,true);
-                        $r = @fwrite($fp,','.$addValue.']');    
+                        $addValue = $this->serialize($addValue, true);
+                        $r = @fwrite($fp, ',' . $addValue . ']');
                     }
-                    
+
                     @fclose($fp);
                     $this->unlock($file);
                     return ($r !== false);
-                
-                   
+
                 default:
                     $fp = @fopen($file, 'ab');
                     if ($fp === false) {
@@ -321,7 +320,6 @@ class DocumentStoreOne
         $file = $this->keyEncryption ? hash($this->keyEncryption, $id) : $id;
         return $this->getPath() . "/" . $file . $this->docExt;
     }
-    
 
     /**
      * It locks a file
@@ -384,6 +382,32 @@ class DocumentStoreOne
     }
 
     /**
+     * Return if the document exists. It doesn't check until the document is fully unlocked unless $tries=null
+     *
+     * @param string   $id    Id of the document.
+     * @param int|null $tries number of tries.<br>
+     *                        The default value is -1 (it uses the default value $defaultNumRetry)<br>
+     *                        If $tries=null then it never check the lock.
+     *
+     * @return string|bool True if the information was read, otherwise false.
+     */
+    public function ifExist($id, $tries = -1)
+    {
+        $file = $this->filename($id);
+        if ($tries !== null) {
+            if ($this->lock($file, $tries)) {
+                $exist = file_exists($file);
+                $this->unlock($file);
+                return $exist;
+            }
+        } else {
+            return file_exists($file);
+        }
+
+        return false;
+    }
+
+    /**
      * Unlocks a document
      *
      * @param string $filepath full file path/key of the document to unlock.
@@ -414,15 +438,45 @@ class DocumentStoreOne
     }
 
     /**
-     * @param $document
+     * Add a document.
+     *
+     * @param string       $id       Id of the document.
+     * @param string|array $document The document
+     * @param int          $tries    number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
+     *
+     * @return bool True if the information was added, otherwise false
+     */
+    public function insert($id, $document, $tries = -1)
+    {
+        $file = $this->filename($id);
+        if ($this->lock($file, $tries)) {
+            if (!file_exists($file)) {
+                if ($this->autoSerialize) {
+                    $write = @file_put_contents($file, $this->serialize($document), LOCK_EX);
+                } else {
+                    $write = @file_put_contents($file, $document, LOCK_EX);
+                }
+            } else {
+                $write = false;
+            }
+            $this->unlock($file);
+            return ($write !== false);
+        }
+
+        return false;
+    }
+
+    /**
+     * @param mixed $document The document content to serialize.
+     * @param bool $special used by serialize_php_array()
      *
      * @return string
      */
-    private function serialize($document,$special=false)
+    private function serialize($document, $special = false)
     {
         switch ($this->serializeStrategy) {
             case 'php_array':
-                return self::serialize_php_array($document,$special);
+                return self::serialize_php_array($document, $special);
             case 'php':
                 return serialize($document);
             case 'json_object':
@@ -434,15 +488,14 @@ class DocumentStoreOne
         }
     }
 
-    private static function serialize_php_array($document,$special=false)
+    private static function serialize_php_array($document, $special = false)
     {
-        if($special) {
+        if ($special) {
             // for append
             return var_export($document, true);
-        } else {
-            return "<?php /** @generated */\nreturn " . var_export($document, true) . ';';    
         }
-        
+        return "<?php /** @generated */\nreturn " . var_export($document, true) . ';';
+
     }
 
     /**
@@ -582,35 +635,6 @@ class DocumentStoreOne
         }
 
         return false; // unable to lock
-    }
-
-    /**
-     * Add a document.
-     *
-     * @param string       $id       Id of the document.
-     * @param string|array $document The document
-     * @param int          $tries    number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
-     *
-     * @return bool True if the information was added, otherwise false
-     */
-    public function insert($id, $document, $tries = -1)
-    {
-        $file = $this->filename($id);
-        if ($this->lock($file, $tries)) {
-            if (!file_exists($file)) {
-                if ($this->autoSerialize) {
-                    $write = @file_put_contents($file, $this->serialize($document), LOCK_EX);
-                } else {
-                    $write = @file_put_contents($file, $document, LOCK_EX);
-                }
-            } else {
-                $write = false;
-            }
-            $this->unlock($file);
-            return ($write !== false);
-        }
-
-        return false;
     }
 
     /**
@@ -803,27 +827,6 @@ class DocumentStoreOne
         return $default;
     }
 
-    /**
-     * It gets the timestamp of a document or false in case of error.
-     *
-     * @param string $id Id of the document.
-     * @param bool   $returnAsAge if true then it returns the age (from the current timestamp)<br>
-     *                            if false then it returns the regular timestamp of the time.
-     *
-     * @return false|int
-     */
-    public function getTimeStamp($id,$returnAsAge=false) {
-        $file = $this->filename($id);
-        if($returnAsAge) {
-            $rt=filemtime($file);
-            if($rt===false) {
-                return false;
-            }
-            return time()-$rt;
-        }
-        return filemtime($file);
-    }
-
     private function deserialize($document)
     {
         switch ($this->serializeStrategy) {
@@ -840,6 +843,32 @@ class DocumentStoreOne
                 // also for none
                 return $document;
         }
+    }
+
+    /**
+     * It gets the timestamp of a document or false in case of error.
+     *
+     * @param string $id          Id of the document.
+     * @param bool   $returnAsAge if true then it returns the age (from the current timestamp)<br>
+     *                            if false then it returns the regular timestamp of the time.
+     *
+     * @return false|int
+     */
+    public function getTimeStamp($id, $returnAsAge = false)
+    {
+        $file = $this->filename($id);
+        if ($returnAsAge) {
+            try {
+                $rt = filemtime($file);
+            } catch (Exception $ex) {
+                $rt = false;
+            }
+            if ($rt === false) {
+                return false;
+            }
+            return time() - $rt;
+        }
+        return filemtime($file);
     }
 
     /**
@@ -888,32 +917,6 @@ class DocumentStoreOne
     }
 
     /**
-     * Return if the document exists. It doesn't check until the document is fully unlocked unless $tries=null
-     *
-     * @param string   $id    Id of the document.
-     * @param int|null $tries number of tries.<br>
-     *                        The default value is -1 (it uses the default value $defaultNumRetry)<br>
-     *                        If $tries=null then it never check the lock.
-     *
-     * @return string|bool True if the information was read, otherwise false.
-     */
-    public function ifExist($id, $tries = -1)
-    {
-        $file = $this->filename($id);
-        if ($tries!==null) {
-            if ($this->lock($file, $tries)) {
-                $exist = file_exists($file);
-                $this->unlock($file);
-                return $exist;
-            }
-        } else {
-            return file_exists($file);
-        }
-
-        return false;
-    }
-
-    /**
      * Delete a document.
      *
      * @param string $id    Id of the document
@@ -929,7 +932,7 @@ class DocumentStoreOne
             $this->unlock($file);
             return $r;
         }
-        
+
         return false;
     }
 
