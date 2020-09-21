@@ -418,6 +418,8 @@ Since it's done on code then it's possible to create an hybrid system (relationa
 
 ## Version list
 
+- 1.16 2020-09-20
+    * new method getTimeStamp()   
 - 1.15 2020-09-13
     * method get() now unlocks a document correctly (using method php_array)     
     * method appendValue() is more efficient with json_object,json_array and it works with php_array.   

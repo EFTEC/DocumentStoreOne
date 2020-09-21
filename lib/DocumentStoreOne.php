@@ -18,7 +18,7 @@ use RuntimeException;
 /**
  * Class DocumentStoreOne
  *
- * @version 1.15 2020-09-13
+ * @version 1.16 2020-09-20
  * @author  Jorge Castro Castillo jcastro@eftec.cl
  * @link    https://github.com/EFTEC/DocumentStoreOne
  * @license LGPLv3
@@ -321,6 +321,7 @@ class DocumentStoreOne
         $file = $this->keyEncryption ? hash($this->keyEncryption, $id) : $id;
         return $this->getPath() . "/" . $file . $this->docExt;
     }
+    
 
     /**
      * It locks a file
@@ -800,6 +801,27 @@ class DocumentStoreOne
             return ($json === false) ? $default : $json;
         }
         return $default;
+    }
+
+    /**
+     * It gets the timestamp of a document or false in case of error.
+     *
+     * @param string $id Id of the document.
+     * @param bool   $returnAsAge if true then it returns the age (from the current timestamp)<br>
+     *                            if false then it returns the regular timestamp of the time.
+     *
+     * @return false|int
+     */
+    public function getTimeStamp($id,$returnAsAge=false) {
+        $file = $this->filename($id);
+        if($returnAsAge) {
+            $rt=filemtime($file);
+            if($rt===false) {
+                return false;
+            }
+            return time()-$rt;
+        }
+        return filemtime($file);
     }
 
     private function deserialize($document)
