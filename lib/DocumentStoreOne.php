@@ -18,7 +18,7 @@ use RuntimeException;
 /**
  * Class DocumentStoreOne
  *
- * @version 1.16.1 2020-09-20
+ * @version 1.16.2 2020-09-20
  * @author  Jorge Castro Castillo jcastro@eftec.cl
  * @link    https://github.com/EFTEC/DocumentStoreOne
  * @license LGPLv3
@@ -857,18 +857,19 @@ class DocumentStoreOne
     public function getTimeStamp($id, $returnAsAge = false)
     {
         $file = $this->filename($id);
+        try {
+            $rt = filemtime($file);
+        } catch (Exception $ex) {
+            $rt = false;
+        }
         if ($returnAsAge) {
-            try {
-                $rt = filemtime($file);
-            } catch (Exception $ex) {
-                $rt = false;
-            }
+            
             if ($rt === false) {
                 return false;
             }
             return time() - $rt;
         }
-        return filemtime($file);
+        return $rt;
     }
 
     /**
