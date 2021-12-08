@@ -12,7 +12,7 @@ It also works a a small footprint database.
 [![php](https://img.shields.io/badge/php->5.4-green.svg)]()
 [![php](https://img.shields.io/badge/php-7.x-green.svg)]()
 [![php](https://img.shields.io/badge/php-8.x-green.svg)]()
-[![Doc](https://img.shields.io/badge/docs-100%25-green.svg)]()
+[![Doc](https://img.shields.io/badge/docs-60%25-green.svg)]()
 
 ## Key features
 - Single key based.
@@ -456,7 +456,36 @@ Since it's done on code then it's possible to create an hybrid system (relationa
 
 
 
-## Working with CSV
+# Control of Error
+
+By default, this library throws errors when an error or exception happens. Some methods allow to avoid to throw errors but most of them could throw an error.
+
+The errors are try/catch catch-ables.
+
+```php
+// throw an error:
+$this->throwable=true; // (default value is true) If false, then the errors are stored in $this->latestError
+try {
+    $this->insert('id1','values'); 
+} catch($ex) {
+    var_dump($ex);
+}
+```
+
+```php
+// not throw an error:
+$this->throwable=false; 
+$this->insert('id1','values'); 
+if($this->latestError) {
+	var_dump($this->latestError);
+}
+$this->resetError();
+
+```
+
+
+
+# Working with CSV
 
 You can work with CSV as follows:
 
@@ -477,8 +506,9 @@ $doc->insert('csv1',$values);
 
 
 
-## Version list
-
+# Version list
+- 1.19 2021-12-08
+  * [added] more controls over the errors.
 - 1.18 2021-12-08
   * [added] csv as serialization strategy
   * Some optimizations

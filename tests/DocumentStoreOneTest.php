@@ -6,6 +6,13 @@ namespace eftec\tests;
 use eftec\DocumentStoreOne\DocumentStoreOne;
 use PHPUnit\Framework\TestCase;
 
+class DummyClass {
+
+}
+class Dummy2Class {
+
+}
+
 
 class DocumentStoreOneTest extends TestCase
 {
@@ -112,14 +119,35 @@ class DocumentStoreOneTest extends TestCase
         $this->assertTrue($doc->appendValue('csv1',['john2',33]));
         $this->assertEquals([['john1',22],['john2',33]],$doc->get('csv1'));
     }
+    public function testCast() {
+        $sub=new Dummy2Class();
+        $sub->field1='hello';
+        $source=new DummyClass();
+        $source->item='item1';
+        $source->item2=new \DateTime();
+        $source->item3=[new Dummy2Class(),new Dummy2Class(),];
+        $final=new DummyClass();
+        $subc=new \stdClass();
+        $subc->field1='world';
+        $final->item3=[$subc,$subc];
+        DocumentStoreOne::fixCast($final,$source);
+        $this->assertEquals(true,$final->item2 instanceof \DateTime);
+        $this->assertEquals(true,$final->item3[0] instanceof Dummy2Class);
+
+    }
 
     public function test_db()
     {
         $this->assertEquals(true,$this->flatcon->insertOrUpdate("someid","dummy"),"insert or update must be true");
 
 	    $this->assertEquals("dummy",$this->flatcon->get("someid"));
-
-        $this->assertEquals("dummy",$this->flatcon->get("someidxxx",-1,'dummy'));
+        try {
+            $this->flatcon->get("someidxxx",-1,'dummy');
+            $r=true;
+        } catch (\Exception $ex) {
+            $r=false;
+        }
+        $this->assertEquals(false,$r);
 
 	    $seq1=$this->flatcon->getNextSequence("myseq");
         $this->assertEquals($seq1+1,$this->flatcon->getNextSequence("myseq"),"sequence must be +1");
