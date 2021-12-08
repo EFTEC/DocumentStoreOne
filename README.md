@@ -479,7 +479,7 @@ $doc->insert('csv1',$values);
 
 ## Version list
 
-- 1.17 2021-12-08
+- 1.18 2021-12-08
   * [added] csv as serialization strategy
   * Some optimizations
   * Memcache is removed.
