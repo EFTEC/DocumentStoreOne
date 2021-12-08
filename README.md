@@ -36,7 +36,7 @@ Testing generating 12000 invoices with customer, details (around 1-5 lines per d
 * MapReduce all invoices per customers 32.9869 seconds (igbinary)
 * Reading all invoices from a customer **0.3 seconds.** (including render the result, see image)
 * Adding a new invoice without recalculating all the MapReduce 0.011 seconds.
-  
+
 ![mapreduce example](https://github.com/EFTEC/DocumentStoreOne/blob/master/doc/mapreduce.jpg "mapreduce on php")
 
 ## Concurrency test
@@ -84,17 +84,41 @@ $flatcon->insertOrUpdate("somekey1",array("a1"=>'hello',"a2"=>'world'));
 
 ## Commands
 
-### Constructor($baseFolder,$collection,$strategy=DocumentStoreOne::DSO_AUTO,$server="")
+### Constructor($baseFolder,$collection,$strategy=DocumentStoreOne::DSO_AUTO,$server="",$serializeStrategy = false,$keyEncryption = '')
 
-It creates the DocumentStoreOne instance.   **$baseFolder** should be a folder, and **$collection** (a subfolder) is optional.
+It creates the DocumentStoreOne instance. 
+
+* **$baseFolder**: should be a folder
+* **$collection**: (a subfolder) is optional.
+* **$strategy**: It is the strategy used to determine if the file is in use or not.
 
 |strategy|type|server|benchmark|
 |---|---|---|---|
 |DSO_AUTO|It sets the best available strategy (default)|depends|-|
 |DSO_FOLDER|It uses a folder for lock/unlock a document|-|0.3247|
 |DSO_APCU|It uses APCU for lock/unlock a document|-|0.1480|
-|DSO_MEMCACHE|It uses MEMCACHE for lock/unlock a document|localhost:11211|0.1493|
 |DSO_REDIS|It uses REDIS for lock/unlock a document|localhost:6379|2.5403 (worst)|
+|DSO_NONE|It uses nothing to lock/unlock a document. It is the fastest method but it is unsafe for multiples users||0|
+
+* **$server**: It is used by REDIS. You can set the server used by the strategy.
+* **$serializeStrategy**: If false then it does not serialize the information. 
+
+| strategy                 | type                                                         |
+| ------------------------ | ------------------------------------------------------------ |
+| php                      | it serializes using serialize() function                     |
+| php_array                | it serializes using include()/var_export()function. The result could be cached on OpCache because the result is a PHP code file. |
+| json_object              | it is serialized using json (as object)                      |
+| json_array               | it is serialized using json (as array)                       |
+| csv                      | it serializes using a csv file.                              |
+| **none** (default value) | it is not serialized. Information must be serialized/de-serialized manually |
+
+Examples:
+
+```php
+$flatcon = new DocumentStoreOne(__DIR__ . "/base"); // new instance, using the folder /base, without serialization and with the default data
+
+$flatcon = new DocumentStoreOne(__DIR__ . "/base", '','auto','','php_array'); // new instance and serializing using php_array
+```
 
 Benchmark how much time (in seconds) it takes to add 100 inserts.   
 
@@ -112,7 +136,7 @@ try {
 use eftec\DocumentStoreOne\DocumentStoreOne;
 include "lib/DocumentStoreOne.php";
 try {
-    $flatcon = new DocumentStoreOne("/base", 'tmp',DocumentStoreOne::DSO_MEMCACHE,"localhost:11211");
+    $flatcon = new DocumentStoreOne("/base", 'tmp',DocumentStoreOne::DSO_APCU);
 } catch (Exception $e) {
     die("Unable to create document store.".$e->getMessage());
 }
@@ -120,7 +144,7 @@ try {
 
 ### isCollection($collection)
 
-Returns true if collection is valid (a subfolder).
+Returns true if collection is valid (a sub-folder).
 ```php
 $ok=$flatcon->isCollection('tmp');
 ```
@@ -136,27 +160,29 @@ This command could be nested.
 $flatcon->collection('newcollection')->select(); // it sets and return a query
 ```
 
-> Note, it doesn't validate if the collection is correct.  You must use isCollection to verify if it's right.
+> Note, it doesn't validate if the collection is correct or exists.  You must use **isCollection()** to verify if it's right.
 
 ### autoSerialize($value=true,$strategy='php') 
-It sets if we want to auto serialize the information and we set how it is serialized
+It sets if we want to auto serialize the information and we set how it is serialized. You can also set using the constructor.
 
 |strategy|type|
 |---|---|
 |php | it serializes using serialize() function|
 |php_array | it serializes using include()/var_export()function. The result could be cached on OpCache because the result is a php file|
-|json_object | it is serialized using json (as object)|php_array | it is serialized as a php_array|
-|json_array | it is serialized using json (as array)|php_array | it is serialized as a php_array|
-|**none** (default value) | it is not serialized. Information must be serialized/de-serialized manually|php_array | it is serialized as a php_array|
+|json_object | it is serialized using json (as object)|
+|json_array | it is serialized using json (as array)|
+|csv | it serializes using a csv file. |
+|**none** (default value) | it is not serialized. Information must be serialized/de-serialized manually|
 
 
 
 ### createCollection($collection) 
 
-It creates a collection. It returns false if the operation fails; otherwise it returns true
+It creates a collection (a new folder). It returns false if the operation fails; otherwise it returns true
 
 ```php
 $flatcon->createCollection('newcollection'); 
+$flatcon->createCollection('/folder1/folder2'); 
 ```
 
 ### insertOrUpdate($id,$document,[$tries=-1])
@@ -165,10 +191,14 @@ inserts a new document (string) in the **$id** indicated. If the document exists
 **$tries** indicates the number of tries. The default value is -1 (default number of attempts).  
 
 ```php
-$doc=json_encode(array("a1"=>'hello',"a2"=>'world'));
-$flatcon->insertOrUpdate("1",$doc);
+// if we are not using auto serialization
+$doc=json_encode(["a1"=>'hello',"a2"=>'world']);
+$flatcon->insertOrUpdate("1",$doc); // it will create a document called 1.dson in the base folder.
+
+// if we are using auto serialization
+$flatcon->insertOrUpdate("1",["a1"=>'hello',"a2"=>'world']);
 ```
-> If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 100 tries that equivales to 10 seconds)
+> If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 100 tries that equivalent to 10 seconds)
 
 > It's fast than insert or update.
 
@@ -178,11 +208,15 @@ Inserts a new document (string) in the **$id** indicated. If the document exists
 **$tries** indicates the number of tries. The default value is -1 (default number of attempts).  
 
 ```php
+// if we are not using auto serialization
 $doc=json_encode(array("a1"=>'hello',"a2"=>'world'));
 $flatcon->insert("1",$doc);
+
+// if we are using auto serialization
+$flatcon->insert("1",["a1"=>'hello',"a2"=>'world']);
 ```
 
-> If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 100 tries that equivales to 10 seconds)
+> If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 100 tries that equivalent to 10 seconds)
 
 ### update($id,$document,[$tries=-1])
 
@@ -190,8 +224,11 @@ Update a document (string) in the **$id** indicated. If the document doesn't exi
 **$tries** indicates the number of tries. The default value is -1 (default number of attempts).  
 
 ```php
-$doc=json_encode(array("a1"=>'hello',"a2"=>'world'));
+// if we are not using auto serialization
+$doc=json_encode(["a1"=>'hello',"a2"=>'world']);
 $flatcon->update("1",$doc);
+// if we are using auto serialization
+$flatcon->update("1",["a1"=>'hello',"a2"=>'world']);
 ```
 
 > If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 100 tries that equivales to 10 seconds)
@@ -208,7 +245,7 @@ $doc=$flatcon->get("1"); // the default value is false
 $doc=$flatcon->get("1",-1,'empty');
 ```
 
-> If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 100 tries that equivales to 10 seconds)
+> If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 100 tries that equivalent to 10 seconds)
 
 
 ### getFiltered($id,[$tries=-1],$default=false,$condition=[],$reindex=true)
@@ -222,11 +259,11 @@ $data=$this->getFiltered('rows',-1,false,['cat'=>'normal']); // [['id'=>3,'cat'=
 $data=$this->getFiltered('rows',-1,false,['type'=>'busy'],false); // [2=>['id'=>3,'cat'=>'normal']]
 ```
 
-> If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 100 tries that equivales to 10 seconds)
+> If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 100 tries that equivalent to 10 seconds)
 
 ### public function appendValue($name,$addValue,$tries=-1)
 
-It adds a value to a document with name $name. For example, for a log file.  
+It adds a value to a document with name **$name**. The new value is added, so it avoids to create the whole document. It is useful, for example, for a log file.
 
 a) If the value doesn't exist, then it's created with $addValue. Otherwise, it will return true  
 b) If the value exists, then $addValue is added, and it'll return true  
@@ -262,7 +299,7 @@ $seq=$flatcon->getNextSequence("seq",-1,1,1,100); // if $seq=1, then it's reserv
 It returns an unique sequence (64bit integer) based on time, a random value and a serverId.
 
 > The chances of collision (a generation of the same value) is 1/4095 (per two operations executed every 0.0001 second).
- 
+
 ```php
 $this->nodeId=1; // if it is not set then it uses a random value each time.
 $unique=$flatcon->getSequencePHP(); 
@@ -417,8 +454,35 @@ Since it's done on code then it's possible to create an hybrid system (relationa
 - The limit of documents that a collection could hold is based on the document system used. NTFS allows 2 million
  of documents per collection.  
 
+
+
+## Working with CSV
+
+You can work with CSV as follows:
+
+```php
+$doc=new DocumentStoreOne(__DIR__ . "/base",'','none','','csv'); // set your strategy to csv.
+$doc->docExt='.csv'; // (optional), you can set the extension of the document
+$doc->csvPrefixColumn='col_'; // (optional), you can set the name of the columns (if the csv doesn't have columns)
+$doc->csvStyle(); // (optional) not needing, but you can use to set your own specifications of csv, for example tab-separated, etc.
+$doc->regionalStyle(); // (optional) not needing, but you can use to set your own regional settings.
+$values=[
+    ['name'=>'john1','age'=>22],
+    ['name'=>'john2','age'=>22],
+    ['name'=>'john3','age'=>22],
+    ];
+$doc->delete('csv1');
+$doc->insert('csv1',$values);
+```
+
+
+
 ## Version list
 
+- 1.17 2021-12-08
+  * [added] csv as serialization strategy
+  * Some optimizations
+  * Memcache is removed.
 - 1.16.2 2020-09-20
     * getTimeStamp() throws an exception when the file doesn't exist. Now it returns false.   
 - 1.16 2020-09-20
@@ -432,11 +496,10 @@ Since it's done on code then it's possible to create an hybrid system (relationa
     * Fixed composer.json. However, the previous composer.json poisoned installations so it removed all the previous
      version from packagist. 
     * Maybe you should delete composer.lock and the folder vendor\efted\documentstoreone and runs composer update.     
-     
 >   [RuntimeException]
 >   Could not load package eftec/documentstoreone in repo.packagist.org: [UnexpectedValueException] Could not parse version constraint ^5.6.*: Invalid version string "^5.6.*"          
-              
-     
+
+
 - 1.13 2020-07-12   
     * method appendValue() now serializes information and works with most method but php_array.    
 - 1.12 2020-04-18
@@ -467,4 +530,4 @@ Since it's done on code then it's possible to create an hybrid system (relationa
 ## Pending
 
 - Transactional (allows to commit or rollback a multiple step transaction). It's in evaluation.
-- Different strategy of lock (folder,memcache,redis and apcu)
+- Different strategy of lock (folder,redis and apcu)
