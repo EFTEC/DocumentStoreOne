@@ -82,7 +82,7 @@ $doc->autoSerialize(true); // autoserialize
 $flatcon->insertOrUpdate("somekey1",array("a1"=>'hello',"a2"=>'world')); 
 ```
 
-## Commands
+## Methods
 
 ### Constructor($baseFolder,$collection,$strategy=DocumentStoreOne::DSO_AUTO,$server="",$serializeStrategy = false,$keyEncryption = '')
 
@@ -103,14 +103,15 @@ It creates the DocumentStoreOne instance.
 * **$server**: It is used by REDIS. You can set the server used by the strategy.
 * **$serializeStrategy**: If false then it does not serialize the information. 
 
-| strategy                 | type                                                         |
-| ------------------------ | ------------------------------------------------------------ |
-| php                      | it serializes using serialize() function                     |
+| strategy                 | type                                                                                                                             |
+|--------------------------|----------------------------------------------------------------------------------------------------------------------------------|
+| php                      | it serializes using serialize() function                                                                                         |
 | php_array                | it serializes using include()/var_export()function. The result could be cached on OpCache because the result is a PHP code file. |
-| json_object              | it is serialized using json (as object)                      |
-| json_array               | it is serialized using json (as array)                       |
-| csv                      | it serializes using a csv file.                              |
-| **none** (default value) | it is not serialized. Information must be serialized/de-serialized manually |
+| json_object              | it is serialized using json (as object)                                                                                          |
+| json_array               | it is serialized using json (as array)                                                                                           |
+| csv                      | it serializes using a csv file.                                                                                                  |
+| igbinary                 | it serializes using a igbinary file.                                                                                             |
+| **none** (default value) | it is not serialized. Information must be serialized/de-serialized manually                                                      |
 
 Examples:
 
@@ -166,19 +167,20 @@ $flatcon->collection('newcollection')->select(); // it sets and return a query
 It sets if we want to auto serialize the information and we set how it is serialized. You can also set using the constructor.
 
 |strategy|type|
-|---|---|
+|--|---|
 |php | it serializes using serialize() function|
 |php_array | it serializes using include()/var_export()function. The result could be cached on OpCache because the result is a php file|
 |json_object | it is serialized using json (as object)|
 |json_array | it is serialized using json (as array)|
 |csv | it serializes using a csv file. |
+|igbinary | it serializes using a igbinary file. |
 |**none** (default value) | it is not serialized. Information must be serialized/de-serialized manually|
 
 
 
 ### createCollection($collection) 
 
-It creates a collection (a new folder). It returns false if the operation fails; otherwise it returns true
+It creates a collection (a new folder inside the base folder). It returns false if the operation fails; otherwise it returns true
 
 ```php
 $flatcon->createCollection('newcollection'); 
@@ -266,7 +268,7 @@ $data=$this->getFiltered('rows',-1,false,['type'=>'busy'],false); // [2=>['id'=>
 It adds a value to a document with name **$name**. The new value is added, so it avoids to create the whole document. It is useful, for example, for a log file.
 
 a) If the value doesn't exist, then it's created with $addValue. Otherwise, it will return true  
-b) If the value exists, then $addValue is added, and it'll return true  
+b) If the value exists, then **$addValue** is added, and it'll return true  
 c) Otherwise, it will return false  
 
 ```php
@@ -456,6 +458,111 @@ Since it's done on code then it's possible to create an hybrid system (relationa
 
 
 
+# Strategy of Serialization
+
+Let's say we want to serialize the next information:
+
+```php
+$input=[['a1'=>1,'a2'=>'a'],['a1'=>2,'a2'=>'b']];
+```
+
+## NONE
+
+The values are not serialized, so it is not possible to serialize an object, array or other structure. It only works with strings.
+
+How values are stored
+
+```
+helloworld
+```
+
+How values are returned
+
+```php
+"helloworld"
+```
+
+
+
+## PHP
+
+The serialization of PHP is one of the faster way to serialize and de-serialize and it always returns the same value with the same structure (classes, array, fields)
+
+However, the value stored could be long.
+
+How the values are stored:
+
+```
+a:2:{i:0;a:2:{s:2:"a1";i:1;s:2:"a2";s:1:"a";}i:1;a:2:{s:2:"a1";i:2;s:2:"a2";s:1:"b";}}
+```
+
+How the values are returned:
+
+```
+[['a1'=>1,'a2'=>'a'],['a1'=>2,'a2'=>'b']]
+```
+
+## PHP_ARRAY
+
+This serialization generates a PHP code. This code is verbose however, it has some nice features:
+
+* It could be cached by PHP's OPcache.
+* It's fast to load.
+
+How the values are stored:
+
+```php
+<?php /** @generated */
+return array (
+  0 => 
+  array (
+    'a1' => 1,
+    'a2' => 'a',
+  ),
+  1 => 
+  array (
+    'a1' => 2,
+    'a2' => 'b',
+  ),
+);
+```
+
+How the values are returned:
+
+```
+[['a1'=>1,'a2'=>'a'],['a1'=>2,'a2'=>'b']]
+```
+
+## JSON_ARRAY and JSON_OBJECT
+
+Both methods works with JSON for the serialization and de-serialization but the first on returns always a associative array while the other could returns an object (stdClass)
+
+Pro: 
+
+* JSON is fast (but not as fast a PHP's serialization)
+* JSON is compatible across different platforms.
+* JSON uses fewer space than PHP?s serialization.
+
+Cons:
+
+* It is a big slower than PHP's serialization
+* The result could vary and it could returns a different structure (objects are always returned as stdClass)
+
+How the values are stored:
+
+```
+[{"a1":1,"a2":"a"},{"a1":2,"a2":"b"}]
+```
+
+How the values are returned:
+
+```php
+[['a1'=>1,'a2'=>'a'],['a1'=>2,'a2'=>'b']] // array
+[stdClass{'a1'=>1,'a2'=>'a'},stdClass{'a1'=>2,'a2'=>'b'}] // object
+```
+
+
+
 # Control of Error
 
 By default, this library throws errors when an error or exception happens. Some methods allow to avoid to throw errors but most of them could throw an error.
@@ -507,6 +614,8 @@ $doc->insert('csv1',$values);
 
 
 # Version list
+- 1.20 2021-12-11
+  - add igbinary
 - 1.19 2021-12-08
   * [added] more controls over the errors.
 - 1.18 2021-12-08
@@ -521,9 +630,8 @@ $doc->insert('csv1',$values);
     * method get() now unlocks a document correctly (using method php_array)     
     * method appendValue() is more efficient with json_object,json_array and it works with php_array.   
     * method appendValue() now generates an array of values.
-
 - 1.14 2020-09-13
-    * Fixed composer.json. However, the previous composer.json poisoned installations so it removed all the previous
+    * Fixed composer.json. However, the previous composer.json poisoned installations, so it removed all the previous
      version from packagist. 
     * Maybe you should delete composer.lock and the folder vendor\efted\documentstoreone and runs composer update.     
 >   [RuntimeException]
@@ -560,4 +668,6 @@ $doc->insert('csv1',$values);
 ## Pending
 
 - Transactional (allows to commit or rollback a multiple step transaction). It's in evaluation.
-- Different strategy of lock (folder,redis and apcu)
+- ~~Different strategy of lock (folder,redis and apcu)~~
+- Msgpack and ~~igbinary~~
+

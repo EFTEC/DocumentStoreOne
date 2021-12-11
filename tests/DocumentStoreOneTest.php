@@ -31,26 +31,89 @@ class DocumentStoreOneTest extends TestCase
         $doc=new DocumentStoreOne(__DIR__ . "/base",'','none','');
         $doc->setStrategy('redis','127.0.0.1');
         $doc->autoSerialize(true,'php');
-        $doc->delete('file1');
-        $this->assertEquals(true,$doc->insert('file1',['a1'=>1,'a2'=>2]));
-        $this->assertEquals(['a1'=>1,'a2'=>2],$doc->get('file1'));
+        $doc->delete('file1_php');
+        $input=[['a1'=>1,'a2'=>'a'],['a1'=>2,'a2'=>'b']];
+        $output=$input;
+        $this->assertEquals(true,$doc->insert('file1_php',$input));
+        $this->assertEquals($output,$doc->get('file1_php'));
     }
-    public function test_basic_apcu() {
+    public function test_basic_apcu_php_array() {
         $doc=new DocumentStoreOne(__DIR__ . "/base",'','none','');
         $doc->setStrategy('apcu');
         $doc->autoSerialize(true,'php_array');
-        $doc->delete('file1');
-        $this->assertEquals(true,$doc->insert('file1',['a1'=>1,'a2'=>2]));
-        $this->assertEquals(['a1'=>1,'a2'=>2],$doc->get('file1'));
+        $doc->delete('file1_php_array');
+        $input=[['a1'=>1,'a2'=>'a'],['a1'=>2,'a2'=>'b']];
+        $output=$input;
+        $this->assertEquals(true,$doc->insert('file1_php_array',$input));
+        $this->assertEquals($output,$doc->get('file1_php_array'));
     }
-    public function test_basic_folder() {
+    public function test_basic_none() {
+        $doc=new DocumentStoreOne(__DIR__ . "/base",'','none','');
+        $doc->setStrategy('none');
+        $doc->autoSerialize(false,'none');
+        $doc->delete('file1_none');
+        $this->assertEquals(true,$doc->insert('file1_none',"hello"));
+        $this->assertEquals(true,$doc->appendValue('file1_none',"world"));
+        $this->assertEquals('helloworld',$doc->get('file1_none'));
+    }
+    public function test_basic_folder_json_array() {
         $doc=new DocumentStoreOne(__DIR__ . "/base",'','none','');
         $doc->setStrategy('folder');
         $doc->autoSerialize(true,'json_array');
-        $doc->delete('file1');
-        $this->assertEquals(true,$doc->insert('file1',['a1'=>1,'a2'=>2]));
-        $this->assertEquals(['a1'=>1,'a2'=>2],$doc->get('file1'));
+        $doc->delete('file1_json_array');
+        $input=[['a1'=>1,'a2'=>'a'],['a1'=>2,'a2'=>'b']];
+        $output=$input;
+        $this->assertEquals(true,$doc->insert('file1_json_array',$input));
+        $this->assertEquals($output,$doc->get('file1_json_array'));
     }
+    public function test_basic_folder_msgpack() {
+
+        if(function_exists('msgpack_pack')) {
+            $doc = new DocumentStoreOne(__DIR__ . "/base", '', 'none', '');
+            $doc->setStrategy('folder');
+            $doc->autoSerialize(true, 'msgpack');
+            $doc->delete('file1_msgpack');
+            $input = [['a1' => 1, 'a2' => 'a'], ['a1' => 2, 'a2' => 'b']];
+            $newRow=['a1' => 2, 'a2' => 'b'];
+            $output = $input;
+            $output[]=$newRow;
+            $this->assertEquals(true, $doc->insert('file1_msgpack', $input));
+            $this->assertEquals(true, $doc->appendValue('file1_msgpack', $newRow));
+            $this->assertEquals($output, $doc->get('file1_msgpack'));
+        } else {
+            var_dump('msgpack not tested');
+            $this->assertEquals(true,true); // skipped
+        }
+    }
+    public function test_basic_folder_igbinary() {
+        if(function_exists('igbinary_serialize')) {
+            $doc = new DocumentStoreOne(__DIR__ . "/base", '', 'none', '');
+            $doc->setStrategy('folder');
+            $doc->autoSerialize(true, 'igbinary');
+            $doc->delete('file1_igbinary');
+            $input = [['a1' => 1, 'a2' => 'a'], ['a1' => 2, 'a2' => 'b']];
+            $newRow=['a1' => 2, 'a2' => 'b'];
+            $output = $input;
+            $output[]=$newRow;
+            $this->assertEquals(true, $doc->insert('file1_igbinary', $input));
+            $this->assertEquals(true, $doc->appendValue('file1_igbinary', $newRow));
+            $this->assertEquals($output, $doc->get('file1_igbinary'));
+        } else {
+            var_dump('igbinary not tested');
+            $this->assertEquals(true,true); // skipped
+        }
+    }
+    public function test_basic_folderObj() {
+        $doc=new DocumentStoreOne(__DIR__."/base",'','none','');
+        $doc->setStrategy('folder');
+        $doc->autoSerialize(true,'json_object');
+        $doc->delete('file1_json_object');
+        $input=[['a1'=>1,'a2'=>'a'],['a1'=>2,'a2'=>'b']];
+        $output=[(object)['a1'=>1,'a2'=>'a'],(object)['a1'=>2,'a2'=>'b']];
+        $this->assertEquals(true,$doc->insert('file1_json_object',$input));
+        $this->assertEquals($output,$doc->get('file1_json_object'));
+    }
+
     public function test_basic_folder2() {
         $doc=new DocumentStoreOne(__DIR__ . "/base",'','none','');
         $doc->throwable=true;

@@ -10,8 +10,7 @@ use eftec\DocumentStoreOne\DocumentStoreOne;
  * @author Jorge Castro Castillo jcastro@eftec.cl
  * @license LGPLv3
  */
-
-include "../lib/DocumentStoreOne.php";
+include __DIR__.'/../vendor/autoload.php';
 include "modelinvoices/Models.php";
 echo "<h1>Map Reduce</h1>";
 echo "We have several invoices, we are mapping an invoice with a customer, so we could consult all the invoices x customer without reading all the invoices<br>";
@@ -25,6 +24,7 @@ $t1=microtime(true);
 
 try {
     $flatcon = new DocumentStoreOne(__DIR__ . "/base", 'invoices');
+    $flatcon->autoSerialize(true,'auto');
 } catch (Exception $e) {
     die("Unable to create document store");
 }
@@ -34,27 +34,14 @@ $listInvoices=$flatcon->select();
 
 $customers=[]; // It's an example to mapreduces. In this case, it reduces the invoice per customers so it generates a customer x invoice table
 
-$igbinary=function_exists('igbinary_serialize');
 
 foreach($listInvoices as $i) {
-    if ($i!='genseq_seq') { // we skip the sequence
-
-        if ($igbinary) {
-            $inv=igbinary_unserialize($flatcon->get($i));
-        } else {
-            $invTmp = json_decode($flatcon->get($i)); // $invTmp is stdclass
-            $inv = new Invoice();
-            DocumentStoreOne::fixCast($inv, $invTmp); // $inv is a Invoice class. However, $inv->details is a stdClass[]
-        }
-
+    if ($i !== 'genseq_seq') { // we skip the sequence
+        $inv=$flatcon->get($i);
         $customers[$inv->customer->name][] = $i;
     }
 }
-if ($igbinary) {
-    $flatcon->collection("invoicemap")->insertOrUpdate("invoicexcustomer", igbinary_serialize($customers));
-} else {
-    $flatcon->collection("invoicemap")->insertOrUpdate("invoicexcustomer", json_encode($customers));
-}
+$flatcon->collection("invoicemap")->insertOrUpdate("invoicexcustomer", $customers);
 $t2=microtime(true);
 echo "store mapreduce microseconds :".($t2-$t1)." seconds.<br>";
 echo "<hr>";
