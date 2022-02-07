@@ -7,12 +7,12 @@ It also works a a small footprint database.
 [![Packagist](https://img.shields.io/packagist/v/eftec/documentstoreone.svg)](https://packagist.org/packages/eftec/documentstoreone)
 [![Total Downloads](https://poser.pugx.org/eftec/documentstoreone/downloads)](https://packagist.org/packages/eftec/documentstoreone)
 [![License](https://img.shields.io/badge/license-LGPLV3-blue.svg)]()
-[![Maintenance](https://img.shields.io/maintenance/yes/2021.svg)]()
-[![composer](https://img.shields.io/badge/composer-%3E1.8-blue.svg)]()
-[![php](https://img.shields.io/badge/php->5.4-green.svg)]()
-[![php](https://img.shields.io/badge/php-7.x-green.svg)]()
+[![Maintenance](https://img.shields.io/maintenance/yes/2022.svg)]()
+[![composer](https://img.shields.io/badge/composer-%3E2.0-blue.svg)]()
+[![php](https://img.shields.io/badge/php-7.2-green.svg)]()
+[![php](https://img.shields.io/badge/php-8.1-green.svg)]()
 [![php](https://img.shields.io/badge/php-8.x-green.svg)]()
-[![Doc](https://img.shields.io/badge/docs-60%25-green.svg)]()
+[![Doc](https://img.shields.io/badge/docs-62%25-green.svg)]()
 
 ## Key features
 - Single key based.
@@ -43,18 +43,18 @@ Testing generating 12000 invoices with customer, details (around 1-5 lines per d
 
 A test with 100 concurrent test (write and read), 10 times.
 
-|N°|	Reads|	(ms)|	Reads|	Error|
-|---|---|---|---|---|
-|1|100|7471|100|0|
-|2|100|7751|100|0|
-|3|100|7490|100|0|
-|4|100|7480|100|0|
-|5|100|8199|100|0|
-|6|100|7451|100|0|
-|7|100|7476|100|0|
-|8|100|7244|100|0|
-|9|100|7573|100|0|
-|10|100|7818|100|0|
+| N°  | 	Reads | 	(ms) | 	Reads | 	Error |
+|-----|--------|-------|--------|--------|
+| 1   | 100    | 7471  | 100    | 0      |
+| 2   | 100    | 7751  | 100    | 0      |
+| 3   | 100    | 7490  | 100    | 0      |
+| 4   | 100    | 7480  | 100    | 0      |
+| 5   | 100    | 8199  | 100    | 0      |
+| 6   | 100    | 7451  | 100    | 0      |
+| 7   | 100    | 7476  | 100    | 0      |
+| 8   | 100    | 7244  | 100    | 0      |
+| 9   | 100    | 7573  | 100    | 0      |
+| 10  | 100    | 7818  | 100    | 0      |
 
 ## Usage
 
@@ -92,13 +92,13 @@ It creates the DocumentStoreOne instance.
 * **$collection**: (a subfolder) is optional.
 * **$strategy**: It is the strategy used to determine if the file is in use or not.
 
-|strategy|type|server|benchmark|
-|---|---|---|---|
-|DSO_AUTO|It sets the best available strategy (default)|depends|-|
-|DSO_FOLDER|It uses a folder for lock/unlock a document|-|0.3247|
-|DSO_APCU|It uses APCU for lock/unlock a document|-|0.1480|
-|DSO_REDIS|It uses REDIS for lock/unlock a document|localhost:6379|2.5403 (worst)|
-|DSO_NONE|It uses nothing to lock/unlock a document. It is the fastest method but it is unsafe for multiples users||0|
+| strategy   | type                                                                                                     | server         | benchmark      |
+|------------|----------------------------------------------------------------------------------------------------------|----------------|----------------|
+| DSO_AUTO   | It sets the best available strategy (default)                                                            | depends        | -              |
+| DSO_FOLDER | It uses a folder for lock/unlock a document                                                              | -              | 0.3247         |
+| DSO_APCU   | It uses APCU for lock/unlock a document                                                                  | -              | 0.1480         |
+| DSO_REDIS  | It uses REDIS for lock/unlock a document                                                                 | localhost:6379 | 2.5403 (worst) |
+| DSO_NONE   | It uses nothing to lock/unlock a document. It is the fastest method but it is unsafe for multiples users || 0              |
 
 * **$server**: It is used by REDIS. You can set the server used by the strategy.
 * **$serializeStrategy**: If false then it does not serialize the information. 
@@ -375,17 +375,17 @@ DocumentStoreOne::fixCast($inv,$invTmp);
 
 ## DocumentStoreOne Fields
 
-The next fields are public and they could be changed during runtime
+The next fields are public, and they could be changed during runtime
 
-|field|Type|
-|---|---|
-|$database|string root folder of the database|
-|$collection|string Current collection (subfolder) of the database|
-|$maxLockTime=120|int Maximium duration of the lock (in seconds). By default it's 2 minutes |
-|$defaultNumRetry=100|int Default number of retries. By default it tries 100x0.1sec=10 seconds |
-|$intervalBetweenRetry=100000|int Interval (in microseconds) between retries. 100000 means 0.1 seconds |
-|$docExt=".dson"|string Default extension (with dot) of the document |
-|$keyEncryption=""|string Indicates if the key is encrypted or not when it's stored (the file name). Empty means, no encryption. You could use md5,sha1,sha256,.. |
+| field                        | Type                                                                                                                                           |
+|------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|
+| $database                    | string root folder of the database                                                                                                             |
+| $collection                  | string Current collection (subfolder) of the database                                                                                          |
+| $maxLockTime=120             | int Maximium duration of the lock (in seconds). By default it's 2 minutes                                                                      |
+| $defaultNumRetry=100         | int Default number of retries. By default it tries 100x0.1sec=10 seconds                                                                       |
+| $intervalBetweenRetry=100000 | int Interval (in microseconds) between retries. 100000 means 0.1 seconds                                                                       |
+| $docExt=".dson"              | string Default extension (with dot) of the document                                                                                            |
+| $keyEncryption=""            | string Indicates if the key is encrypted or not when it's stored (the file name). Empty means, no encryption. You could use md5,sha1,sha256,.. |
 
 Example: 
 ```php
@@ -407,15 +407,15 @@ It could be done manually. The system allows to store a pre-calculated value tha
 
 Let's say the next exercise, we have a list of purchases
 
-|id|customer|age|sex|productpurchase|amount|
-|---|---|---|---|---|---|
-|14|john|33|m|33|3|
-|25|anna|22|f|32|1|
+| id  | customer | age | sex | productpurchase | amount |
+|-----|----------|-----|-----|-----------------|--------|
+| 14  | john     | 33  | m   | 33              | 3      |
+| 25  | anna     | 22  | f   | 32              | 1      |
 
-|productcode|unitprice|
-|---|---|
-|32|23.3|
-|33|30|
+| productcode | unitprice |
+|-------------|-----------|
+| 32          | 23.3      |
+| 33          | 30        |
 
 
 John purchased 3 products with the code 33.  The products 33 costs $23.3 per unit.
@@ -428,6 +428,7 @@ Question, how much every customer paid?.
 ```php
 // 1) open the store
 $ds=new DocumentStoreOne('base','purchases'); // we open the document store and selected the collection purchase.
+$ds->autoSerialize(true,'auto');
 // 2) reading all products
 // if the list of products holds in memory then, we could store the whole list in a single document (listproducts key)
 $products=$ds->collection('products')->get('listproducts');
@@ -437,17 +438,17 @@ $purchases=$ds->collection('purchases')->select(); // they are keys such as 14,1
 $customerXPurchase=[];
 // 4) We read every purchase. It is also slow.  Then we merge the result and obtained the final result
 foreach($purchases as $k) {
-    $purchase=unserialize( $ds->get($k));
+    $purchase=$ds->get($k);
     @$customerXPurchase[$purchase->customer]+=($purchase->amount * @$products[$purchase->productpurchase]); // we add the amount
 }
 // 5) Finally, we store the result.
-$ds->collection('total')->insertOrUpdate(serialize($customerXPurchase),'customerXPurchase'); // we store the result.```
+$ds->collection('total')->insertOrUpdate($customerXPurchase,'customerXPurchase'); // we store the result.
 ```
 
-|customer|value|
-|---|---|
-|john|69.9|
-|anna|30|
+| customer | value |
+|----------|-------|
+| john     | 69.9  |
+| anna     | 30    |
 
 Since it's done on code then it's possible to create an hybrid system (relational database+store+memory cache)
 
@@ -535,7 +536,7 @@ How the values are returned:
 
 ## JSON_ARRAY and JSON_OBJECT
 
-Both methods works with JSON for the serialization and de-serialization but the first on returns always a associative array while the other could returns an object (stdClass)
+Both methods work with JSON for the serialization and de-serialization but the first on returns always a associative array while the other could returns an object (stdClass)
 
 Pro: 
 
@@ -546,7 +547,7 @@ Pro:
 Cons:
 
 * It is a big slower than PHP's serialization
-* The result could vary and it could returns a different structure (objects are always returned as stdClass)
+* The result could vary and it could return a different structure (objects are always returned as stdClass)
 
 How the values are stored:
 
@@ -565,7 +566,7 @@ How the values are returned:
 
 # Control of Error
 
-By default, this library throws errors when an error or exception happens. Some methods allow to avoid to throw errors but most of them could throw an error.
+By default, this library throws errors when an error or exception happens. Some methods allow to avoid throwing errors but most of them could throw an error.
 
 The errors are try/catch catch-ables.
 
@@ -588,6 +589,17 @@ if($this->latestError) {
 }
 $this->resetError();
 
+```
+
+Or you could also use to avoid throwing an exception:
+
+```php
+// not throw an error:
+$this->->noThrowOnError()->insert('id1','values'); 
+// but you can still see the latest error:
+if($this->latestError) {
+	var_dump($this->latestError);
+}
 ```
 
 
@@ -614,12 +626,16 @@ $doc->insert('csv1',$values);
 
 
 # Version list
+* 1.21 2022-02-07
+  * compatibility with PHP 7.2 and higher. This library is not compatible with PHP 5.6 anymore, but you can use an old version of the library.
+  * Tested the compatibility with PHP 8.1
+  * **[added]** method noThrowOnError() 
 - 1.20 2021-12-11
   - add igbinary
 - 1.19 2021-12-08
-  * [added] more controls over the errors.
+  * **[added]** more controls over the errors.
 - 1.18 2021-12-08
-  * [added] csv as serialization strategy
+  * **[added]** csv as serialization strategy
   * Some optimizations
   * Memcache is removed.
 - 1.16.2 2020-09-20

@@ -27,7 +27,8 @@ class DocumentStoreOneTest extends TestCase
 	    $this->flatcon = new DocumentStoreOne(__DIR__ . "/base", '');
     }
 
-    public function test_basic_redis() {
+    public function test_basic_redis(): void
+    {
         $doc=new DocumentStoreOne(__DIR__ . "/base",'','none','');
         $doc->setStrategy('redis','127.0.0.1');
         $doc->autoSerialize(true,'php');
@@ -37,7 +38,8 @@ class DocumentStoreOneTest extends TestCase
         $this->assertEquals(true,$doc->insert('file1_php',$input));
         $this->assertEquals($output,$doc->get('file1_php'));
     }
-    public function test_basic_apcu_php_array() {
+    public function test_basic_apcu_php_array(): void
+    {
         $doc=new DocumentStoreOne(__DIR__ . "/base",'','none','');
         $doc->setStrategy('apcu');
         $doc->autoSerialize(true,'php_array');
@@ -47,7 +49,8 @@ class DocumentStoreOneTest extends TestCase
         $this->assertEquals(true,$doc->insert('file1_php_array',$input));
         $this->assertEquals($output,$doc->get('file1_php_array'));
     }
-    public function test_basic_none() {
+    public function test_basic_none(): void
+    {
         $doc=new DocumentStoreOne(__DIR__ . "/base",'','none','');
         $doc->setStrategy('none');
         $doc->autoSerialize(false,'none');
@@ -55,8 +58,14 @@ class DocumentStoreOneTest extends TestCase
         $this->assertEquals(true,$doc->insert('file1_none',"hello"));
         $this->assertEquals(true,$doc->appendValue('file1_none',"world"));
         $this->assertEquals('helloworld',$doc->get('file1_none'));
+        $this->assertEquals(false,$doc->noThrowOnError()->get('file1_none2')); // file does not exist
+        $this->assertStringContainsString('No such file or directory',$doc->lastError());
+        $doc->resetError();
+        $this->assertStringContainsString('',$doc->lastError());
+        $this->assertEquals(true,$doc->throwable); // testing that throw is returned to the default value.
     }
-    public function test_basic_folder_json_array() {
+    public function test_basic_folder_json_array(): void
+    {
         $doc=new DocumentStoreOne(__DIR__ . "/base",'','none','');
         $doc->setStrategy('folder');
         $doc->autoSerialize(true,'json_array');
@@ -66,7 +75,8 @@ class DocumentStoreOneTest extends TestCase
         $this->assertEquals(true,$doc->insert('file1_json_array',$input));
         $this->assertEquals($output,$doc->get('file1_json_array'));
     }
-    public function test_basic_folder_msgpack() {
+    public function test_basic_folder_msgpack(): void
+    {
 
         if(function_exists('msgpack_pack')) {
             $doc = new DocumentStoreOne(__DIR__ . "/base", '', 'none', '');
@@ -85,7 +95,8 @@ class DocumentStoreOneTest extends TestCase
             $this->assertEquals(true,true); // skipped
         }
     }
-    public function test_basic_folder_igbinary() {
+    public function test_basic_folder_igbinary(): void
+    {
         if(function_exists('igbinary_serialize')) {
             $doc = new DocumentStoreOne(__DIR__ . "/base", '', 'none', '');
             $doc->setStrategy('folder');
@@ -103,7 +114,8 @@ class DocumentStoreOneTest extends TestCase
             $this->assertEquals(true,true); // skipped
         }
     }
-    public function test_basic_folderObj() {
+    public function test_basic_folderObj(): void
+    {
         $doc=new DocumentStoreOne(__DIR__."/base",'','none','');
         $doc->setStrategy('folder');
         $doc->autoSerialize(true,'json_object');
@@ -114,7 +126,8 @@ class DocumentStoreOneTest extends TestCase
         $this->assertEquals($output,$doc->get('file1_json_object'));
     }
 
-    public function test_basic_folder2() {
+    public function test_basic_folder2(): void
+    {
         $doc=new DocumentStoreOne(__DIR__ . "/base",'','none','');
         $doc->throwable=true;
         $doc->setObjectIndex('a1');
@@ -126,7 +139,8 @@ class DocumentStoreOneTest extends TestCase
         $this->assertEquals([['a1'=>1,'a2'=>2]],$doc->get('1'));
     }
 
-    public function test_csv_1() {
+    public function test_csv_1(): void
+    {
         $doc=new DocumentStoreOne(__DIR__ . "/base",'','none','');
         $doc->docExt='.csv';
         $doc->autoSerialize(true,'csv');
@@ -142,13 +156,15 @@ class DocumentStoreOneTest extends TestCase
         $this->assertTrue($doc->appendValue('csv1',['name'=>'john2','age'=>33]));
         $this->assertEquals([['name'=>'john1"','age'=>22],['name'=>'john2','age'=>33]],$doc->get('csv1'));
     }
-    public function test_others() {
+    public function test_others(): void
+    {
         $doc=new DocumentStoreOne(__DIR__ . "/base",'','none','');
         $doc->delete('doc1');
         $doc->insert('doc1',"it is a simple document");
         $this->assertGreaterThan(1638986098,$doc->getTimeStamp('doc1'));
     }
-    public function test_update() {
+    public function test_update(): void
+    {
         $doc=new DocumentStoreOne(__DIR__ . "/base2",'','none','');
         $doc->delete('doc1');
         $doc->delete('doc2');
@@ -167,7 +183,8 @@ class DocumentStoreOneTest extends TestCase
         $this->assertEquals([],$doc->select());
     }
 
-    public function test_csv_2() {
+    public function test_csv_2(): void
+    {
         $doc=new DocumentStoreOne(__DIR__ . "/base",'','none','');
         $doc->docExt='.csv';
         $doc->autoSerialize(true,'csv');
@@ -182,7 +199,8 @@ class DocumentStoreOneTest extends TestCase
         $this->assertTrue($doc->appendValue('csv1',['john2',33]));
         $this->assertEquals([['john1',22],['john2',33]],$doc->get('csv1'));
     }
-    public function testCast() {
+    public function testCast(): void
+    {
         $sub=new Dummy2Class();
         $sub->field1='hello';
         $source=new DummyClass();
@@ -199,7 +217,7 @@ class DocumentStoreOneTest extends TestCase
 
     }
 
-    public function test_db()
+    public function test_db(): void
     {
         $this->assertEquals(true,$this->flatcon->insertOrUpdate("someid","dummy"),"insert or update must be true");
 
@@ -220,9 +238,9 @@ class DocumentStoreOneTest extends TestCase
         $s2=$this->flatcon->getSequencePHP();
         $this->assertEquals(false,$s1===$s2,"sequence must be differents");
 
-        
+
     }
-    public function test_db2()
+    public function test_db2(): void
     {
         $this->flatcon->autoSerialize(true,'php');
         $dataOriginal=[
@@ -243,5 +261,5 @@ class DocumentStoreOneTest extends TestCase
     }
 
 
-  
+
 }

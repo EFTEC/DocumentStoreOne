@@ -1,4 +1,5 @@
-<?php
+<?php /** @noinspection PhpMissingParamTypeInspection */
+
 /**
  * @noinspection PhpParameterByRefIsNotUsedAsReferenceInspection
  * @noinspection UnknownInspectionInspection
@@ -34,12 +35,12 @@ use RuntimeException;
 class DocumentStoreOne
 {
 
-    const DSO_AUTO = 'auto';
-    const DSO_FOLDER = 'folder';
-    const DSO_APCU = 'apcu';
+    public const DSO_AUTO = 'auto';
+    public const DSO_FOLDER = 'folder';
+    public const DSO_APCU = 'apcu';
     /*const DSO_MEMCACHE = 'memcached';*/
-    const DSO_REDIS = 'redis';
-    const DSO_NONE = 'none';
+    public const DSO_REDIS = 'redis';
+    public const DSO_NONE = 'none';
     /**
      * @var string It is used to append a value without updating the whole file.
      *             This value must be enough complex to avoid collisions.
@@ -110,8 +111,8 @@ class DocumentStoreOne
      *                                       only used to lock/unlock purposes.
      * @param string      $server            Used for 'redis' (localhost:6379)
      * @param bool|string $serializeStrategy =['php','php_array','json_object','json_array','csv','igbinary','msgpack','none'][$i]
-     *                                       It sets the strategy of serialization<br>
-     *                                       If false then the value (inserted) is auto serialized<br>
+     *                                       It sets the strategy of serialization<br> If false then the value
+     *                                       (inserted) is auto serialized<br>
      * @param string      $keyEncryption     =['','md5','sha1','sha256','sha512'][$i] it uses to encrypt the name of
      *                                       the keys
      *                                       (filename)
@@ -152,7 +153,7 @@ class DocumentStoreOne
         }
     }
 
-    public function isTabular()
+    public function isTabular(): bool
     {
         return $this->tabular;
     }
@@ -166,7 +167,7 @@ class DocumentStoreOne
      * @throws RuntimeException
      * @noinspection ClassConstantCanBeUsedInspection
      */
-    public function setStrategy($strategy, $server = "")
+    public function setStrategy($strategy, $server = ""): void
     {
         if ($strategy === self::DSO_AUTO) {
             if (function_exists('apcu_add')) {
@@ -222,6 +223,7 @@ class DocumentStoreOne
             default:
                 $this->throwError("Strategy not defined");
         }
+        $this->resetChain();
     }
 
     /**
@@ -229,7 +231,7 @@ class DocumentStoreOne
      *
      * @return string
      */
-    private function getPath()
+    private function getPath(): string
     {
         return $this->database . "/" . $this->collection;
     }
@@ -243,7 +245,7 @@ class DocumentStoreOne
      *
      * @return void
      */
-    public static function fixCast(&$destination, $source)
+    public static function fixCast(&$destination, $source): void
     {
         if (is_array($source)) {
             $getClass = get_class($destination[0]);
@@ -282,7 +284,7 @@ class DocumentStoreOne
      *
      * @param bool $neverLock if its true then the register is never locked. It is fast but it's not concurrency-safe
      */
-    public function setNeverLock($neverLock = true)
+    public function setNeverLock($neverLock = true): void
     {
         $this->neverLock = $neverLock;
     }
@@ -304,17 +306,18 @@ class DocumentStoreOne
      *              it returns true
      * @throws RuntimeException
      */
-    public function appendValue($id, $addValue, $tries = -1)
+    public function appendValue($id, $addValue, $tries = -1): bool
     {
         $this->currentId = $id;
         $file = $this->filename($id);
         if ($this->lock($file, $tries)) {
             try {
-                $result=$this->srvSerialize->appendValue($file, $id, $addValue, $tries);
-                $this->unlock($file,$tries);
+                $result = $this->srvSerialize->appendValue($file, $id, $addValue, $tries);
+                $this->unlock($file, $tries);
+                $this->resetChain();
                 return $result;
-            } catch(Exception $ex) {
-                $this->unlock($file,$tries);
+            } catch (Exception $ex) {
+                $this->unlock($file, $tries);
                 $this->throwError($ex);
             }
         }
@@ -322,12 +325,22 @@ class DocumentStoreOne
         return false; // unable to lock
     }
     // if file does not exisrt, then it will add it.
+
+    /**
+     * @param $file
+     * @param $id
+     * @param $addValue
+     * @param $tries
+     * @return bool|resource
+     * @noinspection PhpMissingReturnTypeInspection
+     */
     public function appendValueDecorator($file, $id, $addValue, $tries = -1)
     {
         if ($this->ifExist($id, null)) {
             $fp = @fopen($file, 'rb+');
         } else {
             $this->unlock($file);
+            $this->resetChain();
             return $this->insert($id, [$addValue], $tries);
         }
         if ($fp === false) {
@@ -335,6 +348,7 @@ class DocumentStoreOne
             $this->throwError(error_get_last());
             return false; // file exists but I am unable to open it.
         }
+        $this->resetChain();
         return $fp;
     }
 
@@ -346,7 +360,7 @@ class DocumentStoreOne
      * @param $addValue
      * @return bool
      */
-    public function appendValueRaw($filePath, $addValue)
+    public function appendValueRaw($filePath, $addValue): bool
     {
         $fp = @fopen($filePath, 'ab');
         if ($fp === false) {
@@ -355,7 +369,7 @@ class DocumentStoreOne
             return false; // file exists but I am unable to open it.
         }
         $addValue = $this->serialize($addValue);
-        if($this->tabular) {
+        if ($this->tabular) {
             $addValue = $this->separatorAppend . $addValue;
         }
         $r = @fwrite($fp, $addValue);
@@ -364,6 +378,7 @@ class DocumentStoreOne
         if ($r === false) {
             $this->throwError(error_get_last());
         }
+        $this->resetChain();
         return ($r !== false);
     }
 
@@ -375,31 +390,32 @@ class DocumentStoreOne
      * @return bool
      * @noinspection PhpUnusedParameterInspection
      */
-    public function appendValueRaw2($id, $addValue, $tries = -1)
+    public function appendValueRaw2($id, $addValue, $tries = -1): bool
     {
         // it is called pre-locked, so we won't lock or unlock
-        $content=$this->get($id,0);
-        if($content===false) {
-            $this->throwError('Append: unable to read file',true);
+        $content = $this->get($id, 0);
+        if ($content === false) {
+            $this->throwError('Append: unable to read file', true);
             return false;  // unable to read
         }
-        if(!is_array($content)) {
-            $this->throwError('Append: content is not an array, unable to insert',true);
+        if (!is_array($content)) {
+            $this->throwError('Append: content is not an array, unable to insert', true);
             return false; // not able to add
         }
-        $content[]=$addValue;
-        return $this->update($id,$content,0); // it is called pre-locked, so we won't lock or unlock
+        $content[] = $addValue;
+        $this->resetChain();
+        return $this->update($id, $content, 0); // it is called pre-locked, so we won't lock or unlock
     }
 
 
     /**
-     * Convert Id to a full filename. If keyencryption then the name is encrypted.
+     * Convert "Id" to a full filename. If keyencryption then the name is encrypted.
      *
      * @param string $id
      *
      * @return string full filename
      */
-    private function filename($id)
+    private function filename($id): string
     {
         $file = $this->keyEncryption ? hash($this->keyEncryption, $id) : $id;
         return $this->getPath() . "/" . $file . $this->docExt;
@@ -415,9 +431,9 @@ class DocumentStoreOne
      *
      * @return bool
      */
-    private function lock($filepath, $maxRetry = -1)
+    private function lock($filepath, $maxRetry = -1): bool
     {
-        if ($this->neverLock || $maxRetry===0) {
+        if ($this->neverLock || $maxRetry === 0) {
             return true;
         }
         $maxRetry = ($maxRetry === -1) ? $this->defaultNumRetry : $maxRetry;
@@ -470,14 +486,14 @@ class DocumentStoreOne
     /**
      * Return if the document exists. It doesn't check until the document is fully unlocked unless $tries=null
      *
-     * @param string   $id    Id of the document.
+     * @param string   $id    "Id" of the document.
      * @param int|null $tries number of tries.<br>
      *                        The default value is -1 (it uses the default value $defaultNumRetry)<br>
-     *                        If $tries=null then it never check the lock.
+     *                        If $tries=null then it never checks the lock.
      *
      * @return bool True if the information was read, otherwise false.
      */
-    public function ifExist($id, $tries = -1)
+    public function ifExist($id, $tries = -1): bool
     {
         $file = $this->filename($id);
         if ($tries !== null) {
@@ -499,9 +515,9 @@ class DocumentStoreOne
      * @param int    $tries
      * @return bool returns true if the unlocks works. Otherwise, it returns false.
      */
-    public function unlock($filePath,$tries=-1)
+    public function unlock($filePath, $tries = -1): bool
     {
-        if ($this->neverLock || $tries===0) {
+        if ($this->neverLock || $tries === 0) {
             return true;
         }
         switch ($this->strategy) {
@@ -515,7 +531,7 @@ class DocumentStoreOne
                 return true;
         }
         $unlockname = $filePath . ".lock";
-        $tries=$tries===-1?$this->defaultNumRetry:$tries;
+        $tries = $tries === -1 ? $this->defaultNumRetry : $tries;
         $try = 0;
         // retry to delete the unlockname folder. If fails then it tries it again.
         while (!@rmdir($unlockname) && $try < $tries) {
@@ -535,7 +551,7 @@ class DocumentStoreOne
      *
      * @return bool True if the information was added, otherwise false
      */
-    public function insert($id, $document, $tries = -1)
+    public function insert($id, $document, $tries = -1): bool
     {
         $file = $this->filename($id);
         $this->currentId = $id;
@@ -562,6 +578,7 @@ class DocumentStoreOne
                 return false;
             }
             $this->unlock($file);
+            $this->resetChain();
             return true;
         }
         $this->unlock($file);
@@ -575,7 +592,7 @@ class DocumentStoreOne
      *
      * @return string
      */
-    public function serialize($document, $special = false)
+    public function serialize($document, $special = false): string
     {
         return $this->srvSerialize->serialize($document, $special);
     }
@@ -589,13 +606,13 @@ class DocumentStoreOne
      * @param mixed $table
      * @return bool
      */
-    public function isTable(&$table)
+    public function isTable(&$table): bool
     {
         return isset($table[0]) && is_array($table[0]);
     }
 
 
-    public function getType($input)
+    public function getType($input): string
     {
         // array
         if (is_array($input)) {
@@ -605,7 +622,7 @@ class DocumentStoreOne
         if ($this->isInt($input)) {
             return 'int';
         }
-        // decimal?
+        // decimal value?
         if ($this->regionDecimal !== '.') {
             $inputD = str_replace($this->regionDecimal, '.', $input);
         } else {
@@ -627,7 +644,7 @@ class DocumentStoreOne
         return is_string($input) ? 'string' : 'oobject';
     }
 
-    public function isInt($input)
+    public function isInt($input): bool
     {
         if ($input === null || $input === '') {
             return false;
@@ -658,7 +675,7 @@ class DocumentStoreOne
 
     //endregion
 
-    public static function serialize_php_array($document, $special = false)
+    public static function serialize_php_array($document, $special = false): ?string
     {
         if ($special) {
             // for append
@@ -673,7 +690,7 @@ class DocumentStoreOne
      *
      * @param string $indexField
      */
-    public function setObjectIndex($indexField)
+    public function setObjectIndex($indexField): void
     {
         $this->objectIndex = $indexField;
     }
@@ -691,6 +708,8 @@ class DocumentStoreOne
      *                                 if nextsequence then it uses a document sequence<br>
      *
      * @return string the index value
+     * @throws Exception
+     * @throws Exception
      * @see \eftec\DocumentStoreOne\DocumentStoreOne::setObjectIndex
      */
     public function insertOrUpdateObject($object, $indexField = null)
@@ -711,6 +730,7 @@ class DocumentStoreOne
      * @param string       $operation  =['insert','insertorupdate'][$i]
      *
      * @return string the index value
+     * @throws Exception
      * @see \eftec\DocumentStoreOne\DocumentStoreOne::setObjectIndex
      */
     public function insertObject($object, $indexField = null, $operation = 'insert')
@@ -745,6 +765,7 @@ class DocumentStoreOne
                 default:
                     trigger_error('insertObject: operation not defined');
             }
+            $this->resetChain();
             return $idx;
         } catch (Exception $ex) {
             $this->throwError($ex->getMessage());
@@ -752,48 +773,57 @@ class DocumentStoreOne
         }
     }
 
-    public function throwError($msg,$append=false)
+    public function throwError($msg, $append = false): void
     {
-        if ($this->throwable) {
-            if (is_array($msg)) {
-                throw @new RuntimeException("{$msg['message']} file:{$msg['file']}[{$msg['line']}]", $msg['type']);
-            }
-            throw new RuntimeException($msg);
+        if (is_array($msg)) {
+            $msg = "{$msg['message']} file:{$msg['file']}[{$msg['line']}] type:{$msg['type']}";
         }
-        if($append) {
+        if ($this->throwable) {
+            $this->resetChain();
+            throw @new RuntimeException($msg);
+        }
+        $this->resetChain();
+        if ($append) {
             $this->latestError .= $msg;
         } else {
             $this->latestError = $msg;
         }
     }
 
-    public function lastError()
+    public function lastError(): string
     {
         return $this->latestError;
     }
 
-    public function resetError()
+    public function resetError(): void
     {
         $this->latestError = '';
     }
 
+    protected function resetChain(): void
+    {
+        $this->throwable = true;
+    }
+
     /**
-     * <p>This function returns an unique sequence<p>
+     * <p>This function returns a unique sequence<p>
      * It ensures a collision free number only if we don't do more than one operation
      * per 0.0001 second However,it also adds a pseudo random number (0-4095)
      * so the chances of collision is 1/4095 (per two operations executed every 0.0001 second).<br>
      * It is based on Twitter's Snowflake number.
      *
      * @return string (it returns a 64bit integer).
+     * @throws Exception
      */
-    public function getSequencePHP()
+    public function getSequencePHP(): string
     {
         $ms = microtime(true); // we use this number as a random number generator (we use the decimals)
         //$ms=1000;
         $timestamp = round($ms * 1000);
-        $rand = (fmod($ms, 1) * 1000000) % 4096; // 4096= 2^12 It is the millionth of seconds
+        $rand = (int)(fmod($ms, 1) * 1000000) % 4096; // 4096= 2^12 It is the millionth of seconds
         if ($this->nodeId === -1) {
-            $number = mt_rand(0, 1023); // a 10bit number.
+            /** @noinspection PhpUnhandledExceptionInspection */
+            $number = random_int(0, 1023); // a 10bit number.
             $calc = (($timestamp - 1459440000000) << 22) + ($number << 12) + $rand;
         } else {
             $calc = (($timestamp - 1459440000000) << 22) + ($this->nodeId << 12) + $rand;
@@ -840,9 +870,10 @@ class DocumentStoreOne
             if ($write === false) {
                 $this->throwError(error_get_last());
             }
+            $this->resetChain();
             return ($write === false) ? false : $read;
         }
-
+        $this->resetChain();
         return false; // unable to lock
     }
 
@@ -856,7 +887,7 @@ class DocumentStoreOne
      *
      * @return bool True if the information was added, otherwise false
      */
-    public function insertOrUpdate($id, $document, $tries = -1)
+    public function insertOrUpdate($id, $document, $tries = -1): bool
     {
         $file = $this->filename($id);
         $this->currentId = $id;
@@ -871,6 +902,7 @@ class DocumentStoreOne
             if ($write === false) {
                 $this->throwError(error_get_last());
             }
+            $this->resetChain();
             return ($write !== false);
         }
 
@@ -888,7 +920,7 @@ class DocumentStoreOne
      *
      * @return bool True if the information was added, otherwise false
      */
-    public function update($id, $document, $tries = -1)
+    public function update($id, $document, $tries = -1): bool
     {
         $file = $this->filename($id);
         $this->currentId = $id;
@@ -902,10 +934,11 @@ class DocumentStoreOne
             } else {
                 $write = false;
             }
-            $this->unlock($file,$tries);
+            $this->unlock($file, $tries);
             if ($write === false) {
                 $this->throwError(error_get_last());
             }
+            $this->resetChain();
             return ($write !== false);
         }
         $this->throwError("Unable to lock file [$this->currentId]");
@@ -920,7 +953,7 @@ class DocumentStoreOne
      *
      * @return DocumentStoreOne
      */
-    public function collection($collection, $createIfNotExist = false)
+    public function collection($collection, $createIfNotExist = false): DocumentStoreOne
     {
         $this->collection = $collection;
         if ($createIfNotExist && !$this->isCollection($collection)) {
@@ -936,7 +969,7 @@ class DocumentStoreOne
      *
      * @return bool It returns false if it's not a collection (a valid folder)
      */
-    public function isCollection($collection)
+    public function isCollection($collection): bool
     {
         $this->collection = $collection;
         return is_dir($this->getPath());
@@ -949,7 +982,7 @@ class DocumentStoreOne
      *
      * @return bool true if the operation is right, false if it fails.
      */
-    public function createCollection($collection)
+    public function createCollection($collection): bool
     {
         $oldCollection = $this->collection;
         $this->collection = $collection;
@@ -958,6 +991,7 @@ class DocumentStoreOne
             $this->throwError('error create collection :' . @error_get_last());
         }
         $this->collection = $oldCollection;
+        $this->resetChain();
         return $r;
     }
 
@@ -968,7 +1002,7 @@ class DocumentStoreOne
      * @param boolean $throwOnError
      * @return void
      */
-    public function deleteCollection($collection, $throwOnError = false)
+    public function deleteCollection($collection, $throwOnError = false): void
     {
         $oldCollection = $this->collection;
         $this->collection = $collection;
@@ -977,6 +1011,7 @@ class DocumentStoreOne
             $this->throwError('error create collection :' . @error_get_last());
         }
         $this->collection = $oldCollection;
+        $this->resetChain();
     }
 
     /**
@@ -994,18 +1029,18 @@ class DocumentStoreOne
      *                            Note: if null then it takes the default value (csv is tabular, while others
      *                            don't<br>
      */
-    public function autoSerialize($value = true, $strategy = 'auto', $tabular = null)
+    public function autoSerialize($value = true, $strategy = 'auto', $tabular = null): void
     {
         $this->autoSerialize = $value;
         if ($value === false) {
             $strategy = 'none';
         }
         $this->serializeStrategy = $strategy;
-        if($this->serializeStrategy==='auto') {
-            if(function_exists('igbinary_serialize')) {
-                $this->serializeStrategy='igbinary';
-            } elseif(function_exists('msgpack_pack')) {
-                $this->serializeStrategy='msgpack';
+        if ($this->serializeStrategy === 'auto') {
+            if (function_exists('igbinary_serialize')) {
+                $this->serializeStrategy = 'igbinary';
+            } elseif (function_exists('msgpack_pack')) {
+                $this->serializeStrategy = 'msgpack';
             } else {
                 $this->serializeStrategy = 'php';
             }
@@ -1036,8 +1071,8 @@ class DocumentStoreOne
                 $this->srvSerialize = new DocumentStoreOneNone($this);
                 break;
         }
-        if($tabular===null) {
-            $this->tabular=$this->srvSerialize->defaultTabular();
+        if ($tabular === null) {
+            $this->tabular = $this->srvSerialize->defaultTabular();
         }
     }
 
@@ -1056,7 +1091,7 @@ class DocumentStoreOne
      *
      * @return void
      */
-    public function csvStyle($separator = ',', $enclosure = '"', $lineEnd = "\n", $header = true, $prefixColumn = '')
+    public function csvStyle($separator = ',', $enclosure = '"', $lineEnd = "\n", $header = true, $prefixColumn = ''): void
     {
         if ($this->srvSerialize instanceof DocumentStoreOneCsv) {
             $this->srvSerialize->csvSeparator = $separator;
@@ -1075,7 +1110,7 @@ class DocumentStoreOne
      * @param string $regionalDateTime
      * @return void
      */
-    public function regionalStyle($regionalDecimal = '.', $regionalDate = 'Y-m-d', $regionalDateTime = 'Y-m-d H:i:s')
+    public function regionalStyle($regionalDecimal = '.', $regionalDate = 'Y-m-d', $regionalDateTime = 'Y-m-d H:i:s'): void
     {
         $this->regionDecimal = $regionalDecimal;
         $this->regionDate = $regionalDate;
@@ -1089,7 +1124,7 @@ class DocumentStoreOne
      *
      * @param bool   $returnOnlyIndex
      *                     If false then it returns each document.
-     *                     If returns (default) then it return indexes.
+     *                     If returns (default) then it returns indexes.
      *
      * @return array|false
      */
@@ -1118,10 +1153,10 @@ class DocumentStoreOne
      * $data=$this->get('rows',-1,"not null"); // it returns a value or "not null" if not found
      * </pre>
      *
-     * @param string $id      Id of the document.
-     * @param int $tries number of tries.<br>
-     *                   The default value is -1 (it uses the default value $defaultNumRetry)<br>
-     *                   0 means it will not try to lock<br>
+     * @param string $id      "Id" of the document.
+     * @param int    $tries   number of tries.<br>
+     *                        The default value is -1 (it uses the default value $defaultNumRetry)<br>
+     *                        0 means it will not try to lock<br>
      * @param mixed  $default Default value (if the value is not found)
      *
      * @return mixed The object if the information was read, otherwise false (or default value).
@@ -1136,8 +1171,8 @@ class DocumentStoreOne
                 $this->unlock($file);
             } else {
                 $json = @file_get_contents($file);
-                $this->unlock($file,$tries);
-                if($json!==false) {
+                $this->unlock($file, $tries);
+                if ($json !== false) {
                     if (strpos($json, $this->separatorAppend) === false) {
                         if ($this->autoSerialize) {
                             $json = $this->deserialize($json);
@@ -1157,9 +1192,28 @@ class DocumentStoreOne
             if ($json === false) {
                 $this->throwError(error_get_last());
             }
+            $this->resetChain();
             return ($json === false) ? $default : $json;
         }
+        $this->resetChain();
         return $default;
+    }
+
+    /**
+     * Set if you don't want to throw an exception when error.<br>
+     * This value is reset every time the value is read or an exception is throw.<br>
+     * However, the error message lastError() is still stored.<br>
+     * <b>Example:</b><br>
+     * <pre>
+     * $this->noThrowOnError()->get('id'); // it will not throw an exception if "id" document does not exist.
+     * <pre>
+     * @param bool $throw if false (default), then it doesn't throw an exception on error.
+     * @return $this
+     */
+    public function noThrowOnError($throw = false): DocumentStoreOne
+    {
+        $this->throwable = $throw;
+        return $this;
     }
 
     private function deserialize($document)
@@ -1170,7 +1224,7 @@ class DocumentStoreOne
     /**
      * It gets the timestamp of a document or false in case of error.
      *
-     * @param string $id          Id of the document.
+     * @param string $id          "Id" of the document.
      * @param bool   $returnAsAge if true then it returns the age (from the current timestamp)<br>
      *                            if false then it returns the regular timestamp of the time.
      *
@@ -1203,7 +1257,7 @@ class DocumentStoreOne
      * $data=$this->getFiltered('rows',-1,false,['type'=>'busy'],false); // it returns values [2=>...,4=>..]
      * </pre>
      *
-     * @param string $id        Id of the document.
+     * @param string $id        "Id" of the document.
      * @param int    $tries     number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
      * @param mixed  $default   default value (if the value is not found)
      * @param array  $condition An associative array with the conditions.
@@ -1212,7 +1266,7 @@ class DocumentStoreOne
      * @return array
      * @noinspection TypeUnsafeComparisonInspection
      */
-    public function getFiltered($id, $tries = -1, $default = false, $condition = [], $reindex = true)
+    public function getFiltered($id, $tries = -1, $default = false, $condition = [], $reindex = true): array
     {
         $rows = $this->get($id, $tries, $default);
         $result = [];
@@ -1244,12 +1298,12 @@ class DocumentStoreOne
     /**
      * Delete a document.
      *
-     * @param string $id    Id of the document
+     * @param string $id    "Id" of the document
      * @param int    $tries number of tries. The default value is -1 (it uses the default value $defaultNumRetry)
      *
      * @return bool if it's unable to unlock or the document doesn't exist.
      */
-    public function delete($id, $tries = -1, $throwOnError = false)
+    public function delete($id, $tries = -1, $throwOnError = false): bool
     {
         $file = $this->filename($id);
         if ($this->lock($file, $tries)) {
@@ -1258,9 +1312,10 @@ class DocumentStoreOne
             if ($r === false && $throwOnError) {
                 $this->throwError(error_get_last());
             }
+            $this->resetChain();
             return $r;
         }
-
+        $this->resetChain();
         return false;
     }
 
@@ -1273,7 +1328,7 @@ class DocumentStoreOne
      *
      * @return bool true if the operation is correct, otherwise it returns false (unable to lock / unable to copy)
      */
-    public function copy($idOrigin, $idDestination, $tries = -1)
+    public function copy($idOrigin, $idDestination, $tries = -1): bool
     {
         $fileOrigin = $this->filename($idOrigin);
         $fileDestination = $this->filename($idDestination);
@@ -1285,6 +1340,7 @@ class DocumentStoreOne
                 if ($r === false) {
                     $this->throwError(error_get_last());
                 }
+                $this->resetChain();
                 return $r;
             }
 
@@ -1306,7 +1362,7 @@ class DocumentStoreOne
      * @return bool true if the operation is correct, otherwise it returns false
      *              (unable to lock / unable to rename)
      */
-    public function rename($idOrigin, $idDestination, $tries = -1)
+    public function rename($idOrigin, $idDestination, $tries = -1): bool
     {
         $fileOrigin = $this->filename($idOrigin);
         $fileDestination = $this->filename($idDestination);
@@ -1318,13 +1374,15 @@ class DocumentStoreOne
                 if ($r === false) {
                     $this->throwError(error_get_last());
                 }
+                $this->resetChain();
                 return $r;
             }
 
             $this->unlock($fileOrigin);
+            $this->resetChain();
             return false;
         }
-
+        $this->resetChain();
         return false;
     }
 
