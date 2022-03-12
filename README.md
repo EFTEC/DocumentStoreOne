@@ -626,6 +626,8 @@ $doc->insert('csv1',$values);
 
 
 # Version list
+* 1.22 2022-03-12
+  * added setTimeStamp() 
 * 1.21 2022-02-07
   * compatibility with PHP 7.2 and higher. This library is not compatible with PHP 5.6 anymore, but you can use an old version of the library.
   * Tested the compatibility with PHP 8.1

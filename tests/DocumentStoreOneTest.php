@@ -49,6 +49,17 @@ class DocumentStoreOneTest extends TestCase
         $this->assertEquals(true,$doc->insert('file1_php_array',$input));
         $this->assertEquals($output,$doc->get('file1_php_array'));
     }
+    public function test_time():void
+    {
+        $doc=new DocumentStoreOne(__DIR__ . "/base",'','none','');
+        $doc->setStrategy('none');
+        $doc->autoSerialize(false,'none');
+        $doc->delete('file1_none');
+        $this->assertEquals(true,$doc->insert('file1_none',"hello"));
+        $this->assertEquals(true,$doc->setTimeStamp('file1_none',1500000));
+        $this->assertGreaterThanOrEqual(1500000,$doc->getTimeStamp('file1_none'));
+    }
+
     public function test_basic_none(): void
     {
         $doc=new DocumentStoreOne(__DIR__ . "/base",'','none','');
