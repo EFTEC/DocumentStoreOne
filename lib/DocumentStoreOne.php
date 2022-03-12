@@ -22,7 +22,7 @@ use RuntimeException;
 /**
  * Class DocumentStoreOne
  *
- * @version 1.20 2021-12-11
+ * @version 1.22.1 2022-03-12
  * @author  Jorge Castro Castillo jcastro@eftec.cl
  * @link    https://github.com/EFTEC/DocumentStoreOne
  * @license LGPLv3 or commercial
@@ -1212,22 +1212,22 @@ class DocumentStoreOne
     /**
      * It gets the timestamp of a document or false in case of error.
      *
-     * @param string $id          "ID" of the document.
-     * @param bool   $returnAsAge if true then it returns the age (how many seconds are elapsed)<br>
+     * @param string $id                   "ID" of the document.
+     * @param bool   $returnAsAbsoluteTime if true then it returns the age (how many seconds are elapsed)<br>
      *                            if false then it returns the regular timestamp of the time.
      *
      * @return false|int
      */
-    public function getTimeStamp(string $id, bool $returnAsAge = false)
+    public function getTimeStamp(string $id, bool $returnAsAbsoluteTime = false)
     {
         $this->currentId = $id;
         $file = $this->filename($id);
         try {
-            $rt = filemtime($file);
+            $rt = @filemtime($file);
         } catch (Exception $ex) {
             $rt = false;
         }
-        if ($returnAsAge) {
+        if ($returnAsAbsoluteTime) {
             if ($rt === false) {
                 return false;
             }
@@ -1238,15 +1238,15 @@ class DocumentStoreOne
 
     /**
      * It sets the modification time of a document
-     * @param string $id          "ID" of the document
-     * @param int    $ttl         the interval (in seconds).
-     * @param bool   $returnAsAge if true then it sets the age ($ttl+time())<br>
+     * @param string $id                   "ID" of the document
+     * @param int    $ttl                  the interval (in seconds).
+     * @param bool   $setTTLAsAbsoluteTime if true then it sets the age ($ttl+time())<br>
      *                            if false then it sets the regular timestamp of the time.
      * @return bool
      */
-    public function setTimeStamp(string $id, int $ttl, bool $returnAsAge = true): bool
+    public function setTimeStamp(string $id, int $ttl, bool $setTTLAsAbsoluteTime = true): bool
     {
-        $time = $returnAsAge ? $ttl : time() + $ttl;
+        $time = $setTTLAsAbsoluteTime ? $ttl : time() + $ttl;
         try {
             return @touch($this->filename($id), $time);
         } catch (Exception $ex) {

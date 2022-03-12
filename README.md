@@ -626,6 +626,8 @@ $doc->insert('csv1',$values);
 
 
 # Version list
+* 1.22.1 2022-03-12
+  * getTimeStamp() Fixed: returns a warning if the file does not exist.
 * 1.22 2022-03-12
   * added setTimeStamp() 
 * 1.21 2022-02-07
