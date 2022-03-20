@@ -1,7 +1,7 @@
 # DocumentStoreOne
 A document store for PHP that allows multiples concurrencies. It is a minimalist alternative to MongoDB or CouchDB without the overhead of installing a new service.  
 
-It also works a a small footprint database.
+It also works as a small footprint database.
 
 [![Build Status](https://travis-ci.org/EFTEC/DocumentStoreOne.svg?branch=master)](https://travis-ci.org/EFTEC/DocumentStoreOne)
 [![Packagist](https://img.shields.io/packagist/v/eftec/documentstoreone.svg)](https://packagist.org/packages/eftec/documentstoreone)
@@ -626,6 +626,8 @@ $doc->insert('csv1',$values);
 
 
 # Version list
+* 1.23 2022-03-20
+  * **[new]** It allows to obtain an instance (if any) of DocumentStoreOne using the static method DocumentStoreOne::instance()
 * 1.22.1 2022-03-12
   * getTimeStamp() Fixed: returns a warning if the file does not exist.
 * 1.22 2022-03-12
