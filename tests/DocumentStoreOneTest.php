@@ -153,6 +153,7 @@ class DocumentStoreOneTest extends TestCase
     public function test_csv_1(): void
     {
         $doc=new DocumentStoreOne(__DIR__ . "/base",'','none','');
+        $this->assertNotEmpty($doc::VERSION);
         $doc->docExt='.csv';
         $doc->autoSerialize(true,'csv');
         $doc->csvPrefixColumn='col_';
