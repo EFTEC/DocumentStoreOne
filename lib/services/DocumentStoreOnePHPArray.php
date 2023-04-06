@@ -24,7 +24,7 @@ class DocumentStoreOnePHPArray implements IDocumentStoreOneSrv
     {
         $this->parent = $parent;
     }
-    public function defaultTabular() {
+    public function defaultTabular():bool {
         return false;
     }
 
@@ -70,14 +70,14 @@ class DocumentStoreOnePHPArray implements IDocumentStoreOneSrv
 
     public function insertOrUpdate($id, $document, $tries = -1)
     {
-        
+
     }
     public function deserialize($document)
     {
         //php_array should be included.
         return $document;
     }
-    
+
 
 
 }

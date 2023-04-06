@@ -1,10 +1,16 @@
-<?php
+<?php /** @noinspection PhpDynamicFieldDeclarationInspection */
+
+/** @noinspection ForgottenDebugOutputInspection */
 
 namespace eftec\tests;
 
 
+use DateTime;
 use eftec\DocumentStoreOne\DocumentStoreOne;
+use Exception;
 use PHPUnit\Framework\TestCase;
+use RedisException;
+use stdClass;
 
 class DummyClass {
 
@@ -21,12 +27,19 @@ class DocumentStoreOneTest extends TestCase
 	 */
     protected $flatcon;
 
+    /**
+     * @throws Exception
+     */
     public function __construct()
     {
 	    parent::__construct();
 	    $this->flatcon = new DocumentStoreOne(__DIR__ . "/base", '');
     }
 
+    /**
+     * @throws RedisException
+     * @throws Exception
+     */
     public function test_basic_redis(): void
     {
         $doc=new DocumentStoreOne(__DIR__ . "/base",'','none','');
@@ -38,6 +51,12 @@ class DocumentStoreOneTest extends TestCase
         $this->assertEquals(true,$doc->insert('file1_php',$input));
         $this->assertEquals($output,$doc->get('file1_php'));
     }
+
+    /**
+     * @throws RedisException
+     * @throws Exception
+     * @throws Exception
+     */
     public function test_basic_apcu_php_array(): void
     {
         $doc=new DocumentStoreOne(__DIR__ . "/base",'','none','');
@@ -49,6 +68,12 @@ class DocumentStoreOneTest extends TestCase
         $this->assertEquals(true,$doc->insert('file1_php_array',$input));
         $this->assertEquals($output,$doc->get('file1_php_array'));
     }
+
+    /**
+     * @throws RedisException
+     * @throws Exception
+     * @throws Exception
+     */
     public function test_time():void
     {
         $doc=new DocumentStoreOne(__DIR__ . "/base",'','none','');
@@ -60,6 +85,12 @@ class DocumentStoreOneTest extends TestCase
         $this->assertGreaterThanOrEqual(1500000,$doc->getTimeStamp('file1_none'));
     }
 
+    /**
+     * @throws RedisException
+     * @throws Exception
+     * @throws Exception
+     * @throws Exception
+     */
     public function test_basic_none(): void
     {
         $doc=new DocumentStoreOne(__DIR__ . "/base",'','none','');
@@ -75,6 +106,12 @@ class DocumentStoreOneTest extends TestCase
         $this->assertStringContainsString('',$doc->lastError());
         $this->assertEquals(true,$doc->throwable); // testing that throw is returned to the default value.
     }
+
+    /**
+     * @throws RedisException
+     * @throws Exception
+     * @throws Exception
+     */
     public function test_basic_folder_json_array(): void
     {
         $doc=new DocumentStoreOne(__DIR__ . "/base",'','none','');
@@ -86,6 +123,13 @@ class DocumentStoreOneTest extends TestCase
         $this->assertEquals(true,$doc->insert('file1_json_array',$input));
         $this->assertEquals($output,$doc->get('file1_json_array'));
     }
+
+    /**
+     * @throws RedisException
+     * @throws Exception
+     * @throws Exception
+     * @throws Exception
+     */
     public function test_basic_folder_msgpack(): void
     {
 
@@ -106,6 +150,13 @@ class DocumentStoreOneTest extends TestCase
             $this->assertEquals(true,true); // skipped
         }
     }
+
+    /**
+     * @throws RedisException
+     * @throws Exception
+     * @throws Exception
+     * @throws Exception
+     */
     public function test_basic_folder_igbinary(): void
     {
         if(function_exists('igbinary_serialize')) {
@@ -125,6 +176,12 @@ class DocumentStoreOneTest extends TestCase
             $this->assertEquals(true,true); // skipped
         }
     }
+
+    /**
+     * @throws RedisException
+     * @throws Exception
+     * @throws Exception
+     */
     public function test_basic_folderObj(): void
     {
         $doc=new DocumentStoreOne(__DIR__."/base",'','none','');
@@ -137,6 +194,12 @@ class DocumentStoreOneTest extends TestCase
         $this->assertEquals($output,$doc->get('file1_json_object'));
     }
 
+    /**
+     * @throws RedisException
+     * @throws Exception
+     * @throws Exception
+     * @throws Exception
+     */
     public function test_basic_folder2(): void
     {
         $doc=new DocumentStoreOne(__DIR__ . "/base",'','none','');
@@ -150,6 +213,11 @@ class DocumentStoreOneTest extends TestCase
         $this->assertEquals([['a1'=>1,'a2'=>2]],$doc->get('1'));
     }
 
+    /**
+     * @throws RedisException
+     * @throws Exception
+     * @throws Exception
+     */
     public function test_csv_1(): void
     {
         $doc=new DocumentStoreOne(__DIR__ . "/base",'','none','');
@@ -168,6 +236,11 @@ class DocumentStoreOneTest extends TestCase
         $this->assertTrue($doc->appendValue('csv1',['name'=>'john2','age'=>33]));
         $this->assertEquals([['name'=>'john1"','age'=>22],['name'=>'john2','age'=>33]],$doc->get('csv1'));
     }
+
+    /**
+     * @throws RedisException
+     * @throws Exception
+     */
     public function test_others(): void
     {
         $doc=new DocumentStoreOne(__DIR__ . "/base",'','none','');
@@ -175,6 +248,11 @@ class DocumentStoreOneTest extends TestCase
         $doc->insert('doc1',"it is a simple document");
         $this->assertGreaterThan(1638986098,$doc->getTimeStamp('doc1'));
     }
+
+    /**
+     * @throws RedisException
+     * @throws Exception
+     */
     public function test_update(): void
     {
         $doc=new DocumentStoreOne(__DIR__ . "/base2",'','none','');
@@ -195,6 +273,11 @@ class DocumentStoreOneTest extends TestCase
         $this->assertEquals([],$doc->select());
     }
 
+    /**
+     * @throws RedisException
+     * @throws Exception
+     * @throws Exception
+     */
     public function test_csv_2(): void
     {
         $doc=new DocumentStoreOne(__DIR__ . "/base",'','none','');
@@ -211,24 +294,41 @@ class DocumentStoreOneTest extends TestCase
         $this->assertTrue($doc->appendValue('csv1',['john2',33]));
         $this->assertEquals([['john1',22],['john2',33]],$doc->get('csv1'));
     }
+    public function testRelative():void
+    {
+        $this->assertEquals(true,DocumentStoreOne::isRelativePath(''));
+        $this->assertEquals(false,DocumentStoreOne::isRelativePath('/'));
+        $this->assertEquals(false,DocumentStoreOne::isRelativePath('/hello'));
+        $this->assertEquals(true,DocumentStoreOne::isRelativePath('hello'));
+        $this->assertEquals(false,DocumentStoreOne::isRelativePath('c:\\'));
+        $this->assertEquals(false,DocumentStoreOne::isRelativePath('c:\\hello'));
+        $this->assertEquals(true,DocumentStoreOne::isRelativePath('hello\\hello2'));
+    }
     public function testCast(): void
     {
+        /** @noinspection PhpObjectFieldsAreOnlyWrittenInspection */
         $sub=new Dummy2Class();
         $sub->field1='hello';
         $source=new DummyClass();
         $source->item='item1';
-        $source->item2=new \DateTime();
+        $source->item2=new DateTime();
         $source->item3=[new Dummy2Class(),new Dummy2Class(),];
         $final=new DummyClass();
-        $subc=new \stdClass();
+        $subc=new stdClass();
         $subc->field1='world';
         $final->item3=[$subc,$subc];
         DocumentStoreOne::fixCast($final,$source);
-        $this->assertEquals(true,$final->item2 instanceof \DateTime);
+        /** @noinspection PhpUndefinedFieldInspection */
+        $this->assertEquals(true,$final->item2 instanceof DateTime);
         $this->assertEquals(true,$final->item3[0] instanceof Dummy2Class);
 
     }
 
+    /**
+     * @throws RedisException
+     * @throws Exception
+     * @throws Exception
+     */
     public function test_db(): void
     {
         $this->assertEquals(true,$this->flatcon->insertOrUpdate("someid","dummy"),"insert or update must be true");
@@ -237,7 +337,7 @@ class DocumentStoreOneTest extends TestCase
         try {
             $this->flatcon->get("someidxxx",-1,'dummy');
             $r=true;
-        } catch (\Exception $ex) {
+        } catch (Exception $ex) {
             $r=false;
         }
         $this->assertEquals(false,$r);
@@ -252,6 +352,10 @@ class DocumentStoreOneTest extends TestCase
 
 
     }
+
+    /**
+     * @throws RedisException
+     */
     public function test_db2(): void
     {
         $this->flatcon->autoSerialize(true,'php');

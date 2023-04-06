@@ -35,7 +35,7 @@ class DocumentStoreOneCsv implements IDocumentStoreOneSrv
     {
         $this->parent = $parent;
     }
-    public function defaultTabular() {
+    public function defaultTabular():bool {
         return true;
     }
     public function appendValue($filePath, $id, $addValue, $tries = -1)
@@ -119,7 +119,7 @@ class DocumentStoreOneCsv implements IDocumentStoreOneSrv
             }
         }
     }
-    
+
 
     public function convertTypeBack($input, $type) {
         switch ($type) {
@@ -173,7 +173,7 @@ class DocumentStoreOneCsv implements IDocumentStoreOneSrv
 
     public function insertOrUpdate($id, $document, $tries = -1)
     {
-        
+
     }
     public function deserialize($document)
     {

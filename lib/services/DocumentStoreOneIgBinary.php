@@ -23,7 +23,7 @@ class DocumentStoreOneIgBinary implements IDocumentStoreOneSrv
     {
         $this->parent = $parent;
     }
-    public function defaultTabular() {
+    public function defaultTabular():bool {
         return false;
     }
 
@@ -54,13 +54,13 @@ class DocumentStoreOneIgBinary implements IDocumentStoreOneSrv
     }
     public function insertOrUpdate($id, $document, $tries = -1)
     {
-        
+
     }
     public function deserialize($document)
     {
         return igbinary_unserialize($document);
     }
-    
+
 
 
 }

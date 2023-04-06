@@ -24,7 +24,7 @@ class DocumentStoreOnePHP implements IDocumentStoreOneSrv
     {
         $this->parent = $parent;
     }
-    public function defaultTabular() {
+    public function defaultTabular():bool {
         return false;
     }
 
@@ -56,13 +56,13 @@ class DocumentStoreOnePHP implements IDocumentStoreOneSrv
 
     public function insertOrUpdate($id, $document, $tries = -1)
     {
-        
+
     }
     public function deserialize($document)
     {
         return unserialize($document);
     }
-    
+
 
 
 }

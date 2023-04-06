@@ -24,7 +24,7 @@ class DocumentStoreOneJsonObj implements IDocumentStoreOneSrv
     {
         $this->parent = $parent;
     }
-    public function defaultTabular() {
+    public function defaultTabular():bool {
         return false;
     }
 
@@ -70,13 +70,13 @@ class DocumentStoreOneJsonObj implements IDocumentStoreOneSrv
 
     public function insertOrUpdate($id, $document, $tries = -1)
     {
-        
+
     }
     public function deserialize($document)
     {
         return json_decode($document, false);
     }
-    
+
 
 
 }

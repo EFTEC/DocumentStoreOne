@@ -27,9 +27,12 @@
     },
   "require": {
     "php": ">=7.2",
-    "ext-json": "*"
+    "ext-json": "*",
+    "ext-igbinary": "*"
   },
   "require-dev": {
+    "ext-redis": "*",
+    "ext-apcu":"*",
     "phpunit/phpunit": ">=9.5.13"
   }
 

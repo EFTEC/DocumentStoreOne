@@ -19,7 +19,7 @@ interface IDocumentStoreOneSrv
      */
     public function __construct(DocumentStoreOne $parent);
 
-    public function defaultTabular();
+    public function defaultTabular():bool;
 
     public function appendValue($filePath, $id, $addValue, $tries = -1);
 

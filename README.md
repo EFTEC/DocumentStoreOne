@@ -6,12 +6,53 @@ It also works as a small footprint database.
 [![Packagist](https://img.shields.io/packagist/v/eftec/documentstoreone.svg)](https://packagist.org/packages/eftec/documentstoreone)
 [![Total Downloads](https://poser.pugx.org/eftec/documentstoreone/downloads)](https://packagist.org/packages/eftec/documentstoreone)
 [![License](https://img.shields.io/badge/license-LGPLV3-blue.svg)]()
-[![Maintenance](https://img.shields.io/maintenance/yes/2022.svg)]()
+[![Maintenance](https://img.shields.io/maintenance/yes/2023.svg)]()
 [![composer](https://img.shields.io/badge/composer-%3E2.0-blue.svg)]()
 [![php](https://img.shields.io/badge/php-7.2-green.svg)]()
 [![php](https://img.shields.io/badge/php-8.1-green.svg)]()
 [![php](https://img.shields.io/badge/php-8.x-green.svg)]()
 [![Doc](https://img.shields.io/badge/docs-62%25-green.svg)]()
+
+
+<!-- TOC -->
+* [DocumentStoreOne](#documentstoreone)
+  * [Key features](#key-features)
+  * [Test](#test)
+  * [Concurrency test](#concurrency-test)
+  * [Usage](#usage)
+  * [Methods](#methods)
+    * [Constructor($baseFolder,$collection,$strategy=DocumentStoreOne::DSO_AUTO,$server="",$serializeStrategy = false,$keyEncryption = '')](#constructor--basefoldercollectionstrategydocumentstoreone---dsoautoserver---serializestrategy--falsekeyencryption----)
+    * [isCollection($collection)](#iscollection--collection-)
+    * [collection($collection)](#collection--collection-)
+    * [autoSerialize($value=true,$strategy='php')](#autoserialize--valuetruestrategyphp--)
+    * [createCollection($collection)](#createcollection--collection-)
+    * [insertOrUpdate($id,$document,[$tries=-1])](#insertorupdate--iddocument-tries-1-)
+    * [insert($id,$document,[$tries=-1])](#insert--iddocument-tries-1-)
+    * [update($id,$document,[$tries=-1])](#update--iddocument-tries-1-)
+    * [get($id,[$tries=-1],$default=false)](#get--id-tries-1-defaultfalse-)
+    * [getFiltered($id,[$tries=-1],$default=false,$condition=[],$reindex=true)](#getfiltered--id-tries-1-defaultfalsecondition---reindextrue-)
+    * [public function appendValue($name,$addValue,$tries=-1)](#public-function-appendvalue--nameaddvaluetries-1-)
+    * [getNextSequence($name="seq",$tries=-1,$init=1,$interval=1,$reserveAdditional=0)](#getnextsequence--name--seq--tries-1init1interval1reserveadditional0-)
+    * [getSequencePHP()](#getsequencephp--)
+    * [ifExist($id,[$tries=-1])](#ifexist--id-tries-1-)
+    * [delete($id,[$tries=-1])](#delete--id-tries-1-)
+    * [select($mask="*")](#select--mask----)
+    * [copy($idorigin,$iddestination,[$tries=-1])](#copy--idoriginiddestination-tries-1-)
+    * [rename($idorigin,$iddestination,[$tries=-1])](#rename--idoriginiddestination-tries-1-)
+    * [fixCast (util class)](#fixcast--util-class-)
+  * [DocumentStoreOne Fields](#documentstoreone-fields)
+  * [MapReduce](#mapreduce)
+  * [Limits](#limits)
+* [Strategy of Serialization](#strategy-of-serialization)
+  * [NONE](#none)
+  * [PHP](#php)
+  * [PHP_ARRAY](#phparray)
+  * [JSON_ARRAY and JSON_OBJECT](#jsonarray-and-jsonobject)
+* [Control of Error](#control-of-error)
+* [Working with CSV](#working-with-csv)
+* [Version list](#version-list)
+  * [Pending](#pending)
+<!-- TOC -->
 
 ## Key features
 - Single key based.
@@ -42,18 +83,18 @@ Testing generating 12000 invoices with customer, details (around 1-5 lines per d
 
 A test with 100 concurrent test (write and read), 10 times.
 
-| N°  | 	Reads | 	(ms) | 	Reads | 	Error |
-|-----|--------|-------|--------|--------|
-| 1   | 100    | 7471  | 100    | 0      |
-| 2   | 100    | 7751  | 100    | 0      |
-| 3   | 100    | 7490  | 100    | 0      |
-| 4   | 100    | 7480  | 100    | 0      |
-| 5   | 100    | 8199  | 100    | 0      |
-| 6   | 100    | 7451  | 100    | 0      |
-| 7   | 100    | 7476  | 100    | 0      |
-| 8   | 100    | 7244  | 100    | 0      |
-| 9   | 100    | 7573  | 100    | 0      |
-| 10  | 100    | 7818  | 100    | 0      |
+| N°  | Reads | (ms) | Reads | Error |
+|-----|-------|------|-------|-------|
+| 1   | 100   | 7471 | 100   | 0     |
+| 2   | 100   | 7751 | 100   | 0     |
+| 3   | 100   | 7490 | 100   | 0     |
+| 4   | 100   | 7480 | 100   | 0     |
+| 5   | 100   | 8199 | 100   | 0     |
+| 6   | 100   | 7451 | 100   | 0     |
+| 7   | 100   | 7476 | 100   | 0     |
+| 8   | 100   | 7244 | 100   | 0     |
+| 9   | 100   | 7573 | 100   | 0     |
+| 10  | 100   | 7818 | 100   | 0     |
 
 ## Usage
 
@@ -61,7 +102,9 @@ A test with 100 concurrent test (write and read), 10 times.
 include "lib/DocumentStoreOne.php";
 use eftec\DocumentStoreOne\DocumentStoreOne;
 try {
-    $flatcon = new DocumentStoreOne(__DIR__ . "/base", 'tmp');
+    $flatcon = new DocumentStoreOne("base", 'tmp');    
+    // or you could use:
+    // $flatcon = new DocumentStoreOne(__DIR__ . "/base", 'tmp');  
 } catch (Exception $e) {
     die("Unable to create document store. Please, check the folder");
 }
@@ -74,7 +117,8 @@ $flatcon->delete("somekey1");
 ```php
 include "lib/DocumentStoreOne.php";
 use eftec\DocumentStoreOne\DocumentStoreOne;
-$doc=new DocumentStoreOne(__DIR__."/base","task",'folder');
+$doc=new DocumentStoreOne("base","task",'folder');
+//also: $doc=new DocumentStoreOne(__DIR__."/base","task",'folder');
 $doc->serializeStrategy='php'; // it sets the strategy of serialization to php
 $doc->autoSerialize(true); // autoserialize
 
@@ -163,17 +207,17 @@ $flatcon->collection('newcollection')->select(); // it sets and return a query
 > Note, it doesn't validate if the collection is correct or exists.  You must use **isCollection()** to verify if it's right.
 
 ### autoSerialize($value=true,$strategy='php') 
-It sets if we want to auto serialize the information and we set how it is serialized. You can also set using the constructor.
+It sets if we want to auto serialize the information, and we set how it is serialized. You can also set using the constructor.
 
-|strategy|type|
-|--|---|
-|php | it serializes using serialize() function|
-|php_array | it serializes using include()/var_export()function. The result could be cached on OpCache because the result is a php file|
-|json_object | it is serialized using json (as object)|
-|json_array | it is serialized using json (as array)|
-|csv | it serializes using a csv file. |
-|igbinary | it serializes using a igbinary file. |
-|**none** (default value) | it is not serialized. Information must be serialized/de-serialized manually|
+| strategy                   | type                                                                                                                       |
+|----------------------------|----------------------------------------------------------------------------------------------------------------------------|
+| php                        | it serializes using serialize() function.                                                                                  |
+| php_array                  | it serializes using include()/var_export()function. The result could be cached on OpCache because the result is a php file |
+| json_object                | it is serialized using json (as object)                                                                                    |
+| json_array                 | it is serialized using json (as array)                                                                                     |
+| csv                        | it serializes using a csv file.                                                                                            |
+| igbinary                   | it serializes using a igbinary file.                                                                                       |
+| **none** (default value)   | it is not serialized. Information must be serialized/de-serialized manually                                                |
 
 
 
@@ -199,9 +243,9 @@ $flatcon->insertOrUpdate("1",$doc); // it will create a document called 1.dson i
 // if we are using auto serialization
 $flatcon->insertOrUpdate("1",["a1"=>'hello',"a2"=>'world']);
 ```
-> If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 100 tries that equivalent to 10 seconds)
+> If the document is locked then it retries until it is available or after a "nth" number of tries (by default it's 100 tries that equivalent to 10 seconds)
 
-> It's fast than insert or update.
+> It's faster than insert or update.
 
 ### insert($id,$document,[$tries=-1])
 
@@ -217,7 +261,7 @@ $flatcon->insert("1",$doc);
 $flatcon->insert("1",["a1"=>'hello',"a2"=>'world']);
 ```
 
-> If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 100 tries that equivalent to 10 seconds)
+> If the document is locked then it retries until it is available or after a "nth" number of tries (by default it's 100 tries that equivalent to 10 seconds)
 
 ### update($id,$document,[$tries=-1])
 
@@ -232,12 +276,12 @@ $flatcon->update("1",$doc);
 $flatcon->update("1",["a1"=>'hello',"a2"=>'world']);
 ```
 
-> If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 100 tries that equivales to 10 seconds)
+> If the document is locked then it retries until it is available or after a "nth" number of tries (by default it's 100 tries that equivales to 10 seconds)
 
 
 ### get($id,[$tries=-1],$default=false)
 
-It reads the document **$id**.  If the document doesn't exist or it's unable to read it, then it returns false.  
+It reads the document **$id**.  If the document doesn't exist, or it's unable to read it, then it returns false.  
 **$tries** indicates the number of tries. The default value is -1 (default number of attempts).  
 
 ```php
@@ -246,12 +290,12 @@ $doc=$flatcon->get("1"); // the default value is false
 $doc=$flatcon->get("1",-1,'empty');
 ```
 
-> If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 100 tries that equivalent to 10 seconds)
+> If the document is locked then it retries until it is available or after a "nth" number of tries (by default it's 100 tries that equivalent to 10 seconds)
 
 
 ### getFiltered($id,[$tries=-1],$default=false,$condition=[],$reindex=true)
 
-It reads the document **$id** filtered.  If the document doesn't exist or it's unable to read it, then it returns false.  
+It reads the document **$id** filtered.  If the document doesn't exist, or it's unable to read it, then it returns false.  
 **$tries** indicates the number of tries. The default value is -1 (default number of attempts).  
 
 ```php
@@ -260,7 +304,7 @@ $data=$this->getFiltered('rows',-1,false,['cat'=>'normal']); // [['id'=>3,'cat'=
 $data=$this->getFiltered('rows',-1,false,['type'=>'busy'],false); // [2=>['id'=>3,'cat'=>'normal']]
 ```
 
-> If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 100 tries that equivalent to 10 seconds)
+> If the document is locked then it retries until it is available or after a "nth" number of tries (by default it's 100 tries that equivalent to 10 seconds)
 
 ### public function appendValue($name,$addValue,$tries=-1)
 
@@ -297,7 +341,7 @@ $seq=$flatcon->getNextSequence("seq",-1,1,1,100); // if $seq=1, then it's reserv
 ```
 ###  getSequencePHP()
 
-It returns an unique sequence (64bit integer) based on time, a random value and a serverId.
+It returns a unique sequence (64bit integer) based on time, a random value and a serverId.
 
 > The chances of collision (a generation of the same value) is 1/4095 (per two operations executed every 0.0001 second).
 
@@ -317,17 +361,17 @@ It checks if the document **$id** exists.  It returns true if the document exist
 $found=$flatcon->ifExist("1");
 ```
 
-> If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 100 tries that equivales to 10 seconds)
+> If the document is locked then it retries until it is available or after a "nth" number of tries (by default it's 100 tries that equivales to 10 seconds)
 
 ### delete($id,[$tries=-1])
 
-It deletes the document **$id**.  If the document doesn't exist or it's unable to delete, then it returns false.  
+It deletes the document **$id**.  If the document doesn't exist, or it's unable to delete, then it returns false.  
 **$tries** indicates the number of tries. The default value is -1 (default number of tries).  
 
 ```php
 $doc=$flatcon->delete("1");
 ```
-> If the document is locked then it retries until it is available or after an "nth" number of tries (by default it's 100 tries that equivales to 10 seconds)
+> If the document is locked then it retries until it is available or after a "nth" number of tries (by default it's 100 tries that equivales to 10 seconds)
 
 ### select($mask="*")
 
@@ -449,10 +493,10 @@ $ds->collection('total')->insertOrUpdate($customerXPurchase,'customerXPurchase')
 | john     | 69.9  |
 | anna     | 30    |
 
-Since it's done on code then it's possible to create an hybrid system (relational database+store+memory cache)
+Since it's done on code then it's possible to create a hybrid system (relational database+store+memory cache)
 
 ## Limits
-- Keys should be of the type A-a,0-9. In windows, keys are not case sensitive. 
+- Keys should be of the type A-a,0-9. In windows, keys are not case-sensitive. 
 - The limit of documents that a collection could hold is based on the document system used. NTFS allows 2 million
  of documents per collection.  
 
@@ -486,7 +530,7 @@ How values are returned
 
 ## PHP
 
-The serialization of PHP is one of the faster way to serialize and de-serialize and it always returns the same value with the same structure (classes, array, fields)
+The serialization of PHP is one of the faster way to serialize and de-serialize, and it always returns the same value with the same structure (classes, array, fields)
 
 However, the value stored could be long.
 
@@ -535,7 +579,8 @@ How the values are returned:
 
 ## JSON_ARRAY and JSON_OBJECT
 
-Both methods work with JSON for the serialization and de-serialization but the first on returns always a associative array while the other could returns an object (stdClass)
+Both methods work with JSON for the serialization and de-serialization but the first on returns always an associative
+array while the other could return an object (stdClass)
 
 Pro: 
 
@@ -546,7 +591,7 @@ Pro:
 Cons:
 
 * It is a big slower than PHP's serialization
-* The result could vary and it could return a different structure (objects are always returned as stdClass)
+* The result could vary, and it could return a different structure (objects are always returned as stdClass)
 
 How the values are stored:
 
@@ -625,6 +670,9 @@ $doc->insert('csv1',$values);
 
 
 # Version list
+* 1.25 2023-06-04
+  * added DocumentStoreOne::isRelativePath()
+  * now you can specify a relative path in the constructor
 * 1.24 2022-06-29
   * deleteCollection() deletes the collection including it's content. 
 * 1.23 2022-03-20
@@ -651,7 +699,7 @@ $doc->insert('csv1',$values);
     * new method getTimeStamp()   
 - 1.15 2020-09-13
     * method get() now unlocks a document correctly (using method php_array)     
-    * method appendValue() is more efficient with json_object,json_array and it works with php_array.   
+    * method appendValue() is more efficient with json_object,json_array, and it works with php_array.   
     * method appendValue() now generates an array of values.
 - 1.14 2020-09-13
     * Fixed composer.json. However, the previous composer.json poisoned installations, so it removed all the previous
