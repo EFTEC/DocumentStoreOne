@@ -17,29 +17,29 @@ It also works as a small footprint database.
 <!-- TOC -->
 * [DocumentStoreOne](#documentstoreone)
   * [Key features](#key-features)
-  * [Test](#test)
+  * [Test](#test-)
   * [Concurrency test](#concurrency-test)
   * [Usage](#usage)
   * [Methods](#methods)
-    * [Constructor($baseFolder,$collection,$strategy=DocumentStoreOne::DSO_AUTO,$server="",$serializeStrategy = false,$keyEncryption = '')](#constructor--basefoldercollectionstrategydocumentstoreone---dsoautoserver---serializestrategy--falsekeyencryption----)
-    * [isCollection($collection)](#iscollection--collection-)
-    * [collection($collection)](#collection--collection-)
-    * [autoSerialize($value=true,$strategy='php')](#autoserialize--valuetruestrategyphp--)
-    * [createCollection($collection)](#createcollection--collection-)
-    * [insertOrUpdate($id,$document,[$tries=-1])](#insertorupdate--iddocument-tries-1-)
-    * [insert($id,$document,[$tries=-1])](#insert--iddocument-tries-1-)
-    * [update($id,$document,[$tries=-1])](#update--iddocument-tries-1-)
-    * [get($id,[$tries=-1],$default=false)](#get--id-tries-1-defaultfalse-)
-    * [getFiltered($id,[$tries=-1],$default=false,$condition=[],$reindex=true)](#getfiltered--id-tries-1-defaultfalsecondition---reindextrue-)
-    * [public function appendValue($name,$addValue,$tries=-1)](#public-function-appendvalue--nameaddvaluetries-1-)
-    * [getNextSequence($name="seq",$tries=-1,$init=1,$interval=1,$reserveAdditional=0)](#getnextsequence--name--seq--tries-1init1interval1reserveadditional0-)
-    * [getSequencePHP()](#getsequencephp--)
-    * [ifExist($id,[$tries=-1])](#ifexist--id-tries-1-)
-    * [delete($id,[$tries=-1])](#delete--id-tries-1-)
-    * [select($mask="*")](#select--mask----)
-    * [copy($idorigin,$iddestination,[$tries=-1])](#copy--idoriginiddestination-tries-1-)
-    * [rename($idorigin,$iddestination,[$tries=-1])](#rename--idoriginiddestination-tries-1-)
-    * [fixCast (util class)](#fixcast--util-class-)
+    * [Constructor($baseFolder,$collection,$strategy=DocumentStoreOne::DSO_AUTO,$server="",$serializeStrategy = false,$keyEncryption = '')](#constructorbasefoldercollectionstrategydocumentstoreonedsoautoserverserializestrategy--falsekeyencryption--)
+    * [isCollection($collection)](#iscollectioncollection)
+    * [collection($collection)](#collectioncollection)
+    * [autoSerialize($value=true,$strategy='php')](#autoserializevaluetruestrategyphp-)
+    * [createCollection($collection)](#createcollectioncollection-)
+    * [insertOrUpdate($id,$document,[$tries=-1])](#insertorupdateiddocumenttries-1)
+    * [insert($id,$document,[$tries=-1])](#insertiddocumenttries-1)
+    * [update($id,$document,[$tries=-1])](#updateiddocumenttries-1)
+    * [get($id,[$tries=-1],$default=false)](#getidtries-1defaultfalse)
+    * [getFiltered($id,[$tries=-1],$default=false,$condition=[],$reindex=true)](#getfilteredidtries-1defaultfalseconditionreindextrue)
+    * [public function appendValue($name,$addValue,$tries=-1)](#public-function-appendvaluenameaddvaluetries-1)
+    * [getNextSequence($name="seq",$tries=-1,$init=1,$interval=1,$reserveAdditional=0)](#getnextsequencenameseqtries-1init1interval1reserveadditional0)
+    * [getSequencePHP()](#getsequencephp)
+    * [ifExist($id,[$tries=-1])](#ifexistidtries-1)
+    * [delete($id,[$tries=-1])](#deleteidtries-1)
+    * [select($mask="*")](#selectmask)
+    * [copy($idorigin,$iddestination,[$tries=-1])](#copyidoriginiddestinationtries-1)
+    * [rename($idorigin,$iddestination,[$tries=-1])](#renameidoriginiddestinationtries-1)
+    * [fixCast (util class)](#fixcast-util-class)
   * [DocumentStoreOne Fields](#documentstoreone-fields)
   * [MapReduce](#mapreduce)
   * [Limits](#limits)
@@ -141,7 +141,7 @@ It creates the DocumentStoreOne instance.
 | DSO_FOLDER | It uses a folder for lock/unlock a document                                                              | -              | 0.3247         |
 | DSO_APCU   | It uses APCU for lock/unlock a document                                                                  | -              | 0.1480         |
 | DSO_REDIS  | It uses REDIS for lock/unlock a document                                                                 | localhost:6379 | 2.5403 (worst) |
-| DSO_NONE   | It uses nothing to lock/unlock a document. It is the fastest method but it is unsafe for multiples users || 0              |
+| DSO_NONE   | It uses nothing to lock/unlock a document. It is the fastest method but it is unsafe for multiples users |                | 0              |
 
 * **$server**: It is used by REDIS. You can set the server used by the strategy.
 * **$serializeStrategy**: If false then it does not serialize the information. 
@@ -670,6 +670,8 @@ $doc->insert('csv1',$values);
 
 
 # Version list
+* 1.25.1 2023-06-04
+  * fixed a bug in the constructor. Now it generates the folders if they don't exist. 
 * 1.25 2023-06-04
   * added DocumentStoreOne::isRelativePath()
   * now you can specify a relative path in the constructor

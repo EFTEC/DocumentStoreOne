@@ -143,9 +143,15 @@ class DocumentStoreOne
         $this->keyEncryption = $keyEncryption;
         $this->setStrategy($strategy, $server);
         if (!is_dir($this->getPath())) {
-            $this->throwError("the folder is incorrect or I'm not unable to read  it: "
-                . $this->getPath() .
-                '. You could create the collection with createCollection()');
+            $backup=$this->collection;
+            try {
+                $this->createCollection("",false); // create base
+                $this->createCollection($backup,false); // create collection and return previous configuration.
+            } catch(Exception $ex) {
+                $this->throwError("the folder is incorrect or I'm not unable to read  it: "
+                    . $this->getPath() .
+                    '. '.$ex->getMessage());
+            }
         }
         if (self::$instance === null) {
             self::$instance = $this;
@@ -471,7 +477,7 @@ class DocumentStoreOne
                     $lockname = $filepath . ".lock";
                     $life = @filectime($lockname); // $life=false is ok (the file doesn't exist)
                     $try = 0;
-                    while (!@mkdir($lockname) && is_dir($lockname) && $try < $maxRetry) {
+                    while (!@mkdir($lockname,0755) && is_dir($lockname) && $try < $maxRetry) {
                         $try++;
                         if ($life && (time() - $life) > $this->maxLockTime) {
                             rmdir($lockname);
@@ -609,7 +615,7 @@ class DocumentStoreOne
     //region csv
 
     /**
-     * Returns true if the input is a table (a 2 dimensional array)
+     * Returns true if the input is a table (a 2-dimensional array)
      * @param mixed $table
      * @return bool
      */
@@ -946,12 +952,12 @@ class DocumentStoreOne
     /**
      * Set the current collection. It also could create the collection.
      *
-     * @param      $collection
+     * @param string $collection
      * @param bool $createIfNotExist if true then it checks if the collection (folder) exists, if not then it's created
      *
      * @return DocumentStoreOne
      */
-    public function collection($collection, bool $createIfNotExist = false): DocumentStoreOne
+    public function collection(string $collection, bool $createIfNotExist = false): DocumentStoreOne
     {
         $this->collection = $collection;
         if ($createIfNotExist && !$this->isCollection($collection)) {
@@ -963,11 +969,11 @@ class DocumentStoreOne
     /**
      * Check a collection
      *
-     * @param $collection
+     * @param string $collection
      *
      * @return bool It returns false if it's not a collection (a valid folder)
      */
-    public function isCollection($collection): bool
+    public function isCollection(string $collection): bool
     {
         $this->collection = $collection;
         return is_dir($this->getPath());
@@ -976,16 +982,16 @@ class DocumentStoreOne
     /**
      * Creates a collection
      *
-     * @param $collection
-     *
+     * @param string $collection
+     * @param bool   $throwifFail
      * @return bool true if the operation is right, false if it fails.
      */
-    public function createCollection($collection): bool
+    public function createCollection(string $collection,bool $throwifFail=true): bool
     {
         $oldCollection = $this->collection;
         $this->collection = $collection;
-        $r = @mkdir($this->getPath());
-        if ($r === false) {
+        $r = @mkdir($this->getPath(),0755);
+        if ($r === false && $throwifFail) {
             $this->throwError('error create collection :' . @error_get_last());
         }
         $this->collection = $oldCollection;
