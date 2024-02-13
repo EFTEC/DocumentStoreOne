@@ -24,11 +24,11 @@
         "ext-redis": "If you want to use redis for locks. It is not recommended becuase it's slow than folder",
         "ext-apcu": "If you want to use apcu for locks. It is recommended",
         "ext-igbinary": "Some examples could use it"
+
     },
   "require": {
     "php": ">=7.2",
-    "ext-json": "*",
-    "ext-igbinary": "*"
+    "ext-json": "*"
   },
   "require-dev": {
     "ext-redis": "*",

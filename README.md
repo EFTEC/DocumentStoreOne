@@ -6,7 +6,7 @@ It also works as a small footprint database.
 [![Packagist](https://img.shields.io/packagist/v/eftec/documentstoreone.svg)](https://packagist.org/packages/eftec/documentstoreone)
 [![Total Downloads](https://poser.pugx.org/eftec/documentstoreone/downloads)](https://packagist.org/packages/eftec/documentstoreone)
 [![License](https://img.shields.io/badge/license-LGPLV3-blue.svg)]()
-[![Maintenance](https://img.shields.io/maintenance/yes/2023.svg)]()
+[![Maintenance](https://img.shields.io/maintenance/yes/2024.svg)]()
 [![composer](https://img.shields.io/badge/composer-%3E2.0-blue.svg)]()
 [![php](https://img.shields.io/badge/php-7.2-green.svg)]()
 [![php](https://img.shields.io/badge/php-8.1-green.svg)]()
@@ -670,6 +670,8 @@ $doc->insert('csv1',$values);
 
 
 # Version list
+* 1.26 2024-02-13
+  * composer.json ig-binary is suggested, not required 
 * 1.25.1 2023-06-04
   * fixed a bug in the constructor. Now it generates the folders if they don't exist. 
 * 1.25 2023-06-04

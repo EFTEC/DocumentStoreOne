@@ -1,4 +1,6 @@
-<?php /** @noinspection PhpComposerExtensionStubsInspection */
+<?php /** @noinspection UnknownInspectionInspection */
+
+/** @noinspection PhpComposerExtensionStubsInspection */
 
 namespace eftec\DocumentStoreOne;
 
@@ -21,14 +23,14 @@ use RuntimeException;
 /**
  * Class DocumentStoreOne
  *
- * @version 1.24 2022-06-29
+ * @version 1.26 2024-02-13
  * @author  Jorge Castro Castillo jcastro@eftec.cl
  * @link    https://github.com/EFTEC/DocumentStoreOne
  * @license LGPLv3 or commercial
  */
 class DocumentStoreOne
 {
-    public const VERSION = '1.24';
+    public const VERSION = '1.26';
     public const DSO_AUTO = 'auto';
     public const DSO_FOLDER = 'folder';
     public const DSO_APCU = 'apcu';
